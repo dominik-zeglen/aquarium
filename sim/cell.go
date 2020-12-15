@@ -7,8 +7,6 @@ import (
 	"github.com/golang/geo/r2"
 )
 
-const procreationCd = 10
-
 type Cell struct {
 	id       int
 	position r2.Point
@@ -25,23 +23,24 @@ type Cell struct {
 	carnivore int8
 	funghi    int8
 
-	alive        bool
-	timeToDie    int
-	hp           int
-	bornAt       int
-	diedAt       int
-	procreatedAt int
+	alive          bool
+	timeToDie      int
+	hp             int
+	bornAt         int
+	diedAt         int
+	procreatedAt   int
+	wasteTolerance float64
 
 	satiation    int
 	maxSatiation int
 	consumption  int
-	extrements   int
 	transport    int
 	capacity     int
 	maxCapacity  int
 
-	division     int8
-	connectivity int8
+	division      int8
+	connectivity  int8
+	procreationCd int8
 
 	mobility int
 
@@ -77,9 +76,25 @@ func (c Cell) shouldEat() bool {
 	return c.maxSatiation > c.satiation
 }
 
-func (c *Cell) eat() {
+func (c Cell) getWaste(e Environment) float64 {
+	waste := float64(c.size)
+	if (e.toxicity) > 0 {
+		waste -= float64(c.funghi) * 0.4
+	}
+
+	return waste / 6e8
+}
+
+func (c Cell) getWasteAfterDeath() float64 {
+	return (float64(c.size)) / 8e8
+}
+
+func (c *Cell) eat(e Environment) {
 	c.satiation -= c.consumption
-	food := int(c.herbivore * 2)
+	food := int(float32(c.herbivore) * 1.2)
+	if e.toxicity > 0 {
+		food += int(float32(c.funghi) * 0.4)
+	}
 
 	if food > c.getLeftToFull() {
 		c.satiation = c.maxSatiation
@@ -106,16 +121,70 @@ func (c *Cell) eat() {
 	}
 }
 
+func (c *Cell) validate() {
+	if c.carnivore < 0 {
+		c.carnivore = 0
+	}
+	if c.herbivore < 0 {
+		c.herbivore = 0
+	}
+	if c.funghi < 0 {
+		c.funghi = 0
+	}
+	if c.consumption < 1 {
+		c.consumption = 1
+	}
+	if c.division < 0 {
+		c.division = 0
+	}
+}
+
+func (c *Cell) mutate() {
+	attr := rand.Intn(7)
+
+	switch attr {
+	case 0:
+		c.carnivore += int8(rand.Intn(3) - 1)
+		break
+	case 1:
+		c.herbivore += int8(rand.Intn(3) - 1)
+		break
+	case 2:
+		c.funghi += int8(rand.Intn(3) - 1)
+		break
+	case 3:
+		c.capacity += rand.Intn(3) - 1
+		break
+	case 4:
+		c.consumption += rand.Intn(3) - 1
+		break
+	case 5:
+		c.division += int8(rand.Intn(3) - 1)
+		break
+	case 6:
+		c.wasteTolerance += float64(rand.Intn(3)-1) / 4
+		break
+	case 7:
+		c.timeToDie += rand.Intn(3) - 1
+		break
+	}
+
+	c.validate()
+	if rand.Float32() > .999 {
+		c.mutate()
+	}
+}
+
 func (c Cell) canProcreate(iteration int) bool {
 	if c.procreatedAt == 0 {
 		return !c.shouldEat()
 	}
-	return iteration-c.procreatedAt > procreationCd && !c.shouldEat()
+	return iteration-c.procreatedAt > int(c.procreationCd) && !c.shouldEat()
 }
 
-func (c *Cell) procreate(iteration int, lastID int) []Cell {
+func (c *Cell) procreate(canProcreate bool, iteration int, lastID int) []Cell {
 	descendants := []Cell{}
-	if c.canProcreate(iteration) {
+	if canProcreate && c.canProcreate(iteration) && rand.Float32() > .8 {
 		food := c.maxCapacity / int(c.division+1)
 
 		for i := 0; i < int(c.division); i++ {
@@ -129,6 +198,10 @@ func (c *Cell) procreate(iteration int, lastID int) []Cell {
 			descendant.procreatedAt = iteration
 
 			c.satiation = food
+
+			if rand.Float32() > .99 {
+				c.mutate()
+			}
 
 			descendants = append(descendants, descendant)
 		}
@@ -146,23 +219,28 @@ func (c *Cell) move() {
 	c.position = c.position.Add(moveVec)
 }
 
-func (c Cell) shouldDie(iteration int) bool {
-	p := gauss.NewGaussian(float64(c.timeToDie), 4)
-	prob := p.Cdf(float64(iteration - c.bornAt))
+func (c Cell) shouldDie(env Environment, iteration int) bool {
+	var prob float64
+	if env.toxicity > c.wasteTolerance {
+		prob = rand.Float64() + (env.toxicity - c.wasteTolerance)
+	}
+
+	p := gauss.NewGaussian(float64(c.timeToDie), 10)
+	prob += p.Cdf(float64(iteration - c.bornAt))
 	roll := rand.Float64()
 	shouldDie := prob > roll
 
 	return shouldDie
 }
 
-func (c *Cell) sim(iteration int, lastID int) []Cell {
+func (c *Cell) sim(env Environment, iteration int, lastID int, canProcreate bool) []Cell {
 	descendants := []Cell{}
 
 	if c.alive {
-		c.eat()
+		c.eat(env)
 		c.move()
-		descendants = c.procreate(iteration, lastID)
-		if c.shouldDie(iteration) {
+		descendants = c.procreate(canProcreate, iteration, lastID)
+		if c.shouldDie(env, iteration) {
 			c.alive = false
 			c.diedAt = iteration
 		}
@@ -171,15 +249,41 @@ func (c *Cell) sim(iteration int, lastID int) []Cell {
 	return descendants
 }
 
-func getRandomCell(id int) Cell {
+func getRandomFunghiCell() Cell {
 	points := int((17 * 100) / (3 + rand.Float64()))
 
 	c := Cell{}
 
-	c.id = id
-	c.action = idle
-	c.alive = true
-	c.bornAt = 0
+	c.capacity = rand.Intn(30)
+	points -= c.capacity
+
+	c.size = rand.Intn(30) + 1
+	points -= c.size
+
+	c.funghi = int8(rand.Intn(100))
+	points -= int(c.funghi)
+
+	c.division = 1
+	points -= int(c.division * 10)
+
+	c.timeToDie = int(rand.NormFloat64()*20) + 30
+	points -= c.timeToDie * 10
+
+	c.maxSatiation = int(rand.Intn(100)) + 300
+	c.satiation = c.maxSatiation / 2
+
+	c.consumption = 10
+	c.procreationCd = int8(rand.Intn(4) + 8)
+
+	c.wasteTolerance = rand.Float64()*3 + 10
+
+	return c
+}
+
+func getRandomHerbivoreCell() Cell {
+	points := int((17 * 100) / (3 + rand.Float64()))
+
+	c := Cell{}
 
 	c.capacity = rand.Intn(30)
 	points -= c.capacity
@@ -193,13 +297,33 @@ func getRandomCell(id int) Cell {
 	c.division = 1
 	points -= int(c.division * 10)
 
-	c.timeToDie = int(rand.NormFloat64()*20) + 50
+	c.timeToDie = int(rand.NormFloat64()*20) + 30
 	points -= c.timeToDie * 10
 
 	c.maxSatiation = int(rand.Intn(100)) + 300
 	c.satiation = c.maxSatiation / 2
 
 	c.consumption = 10
+	c.procreationCd = int8(rand.Intn(4) + 8)
+
+	c.wasteTolerance = rand.Float64()*6 + 4
+
+	return c
+}
+
+func getRandomCell(id int) Cell {
+	var c Cell
+
+	if rand.Float32() > .5 {
+		c = getRandomHerbivoreCell()
+	} else {
+		c = getRandomFunghiCell()
+	}
+
+	c.id = id
+	c.action = idle
+	c.alive = true
+	c.bornAt = 0
 
 	return c
 }

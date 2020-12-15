@@ -5,7 +5,10 @@ import "github.com/dominik-zeglen/aquarium/sim"
 func main() {
 	s := sim.CreateSim()
 
-	for i := 0; i < 1000; i++ {
+	for {
+		if s.GetCellCount() == 0 {
+			break
+		}
 		s.RunStep()
 	}
 }
