@@ -8,27 +8,85 @@ type Sim struct {
 	iteration int
 }
 
-func (s *Sim) RunStep() {
+type SpeciesMap map[string]int
+type SpeciesData struct {
+	Name      string
+	Organisms int
+}
+
+type WasteData struct {
+	Waste        float64
+	MinTolerance float64
+	MaxTolerance float64
+}
+
+type ProcreationData struct {
+	CanProcreate bool
+	MinCd        int8
+	MaxCd        int8
+	Species      []SpeciesData
+}
+
+type SimData struct {
+	CellCount      int
+	AliveCellCount int
+	Waste          WasteData
+	Iteration      int
+	Procreation    ProcreationData
+}
+
+const maxCells = 1e4
+
+func (s *Sim) RunStep() SimData {
 	nextGenCells := []Cell{}
 	waste := float64(0)
-	minTolerance := float64(1000)
-	maxTolerance := float64(0)
+	species := SpeciesMap{}
 
-	aliveCells := s.getAliveCells()
+	data := SimData{
+		CellCount:      len(s.cells),
+		AliveCellCount: s.getAliveCells(),
+		Iteration:      s.iteration,
+		Waste: WasteData{
+			MinTolerance: 9999,
+			Waste:        s.env.toxicity,
+		},
+		Procreation: ProcreationData{
+			MinCd: 127,
+		},
+	}
 
-	for cellIndex := range s.cells {
-		if maxTolerance < s.cells[cellIndex].wasteTolerance {
-			maxTolerance = s.cells[cellIndex].wasteTolerance
+	data.Procreation.CanProcreate = data.AliveCellCount < maxCells
+
+	for cellIndex, cell := range s.cells {
+		if cell.alive {
+			species[cell.species]++
+			if data.Waste.MaxTolerance < cell.wasteTolerance {
+				data.Waste.MaxTolerance = cell.wasteTolerance
+			}
+			if data.Waste.MinTolerance > cell.wasteTolerance {
+				data.Waste.MinTolerance = cell.wasteTolerance
+			}
+
+			if data.Procreation.MaxCd < cell.procreationCd {
+				data.Procreation.MaxCd = cell.procreationCd
+			}
+			if data.Procreation.MinCd > cell.procreationCd {
+				data.Procreation.MinCd = cell.procreationCd
+			}
 		}
-		if minTolerance > s.cells[cellIndex].wasteTolerance {
-			minTolerance = s.cells[cellIndex].wasteTolerance
-		}
-		descendants := s.cells[cellIndex].sim(s.env, s.iteration, s.cells[len(s.cells)-1].id, aliveCells < 2e5)
+
+		descendants := s.cells[cellIndex].sim(
+			s.env,
+			s.iteration,
+			s.cells[data.CellCount-1].id,
+			data.Procreation.CanProcreate,
+		)
+
 		if len(descendants) > 0 {
 			nextGenCells = append(nextGenCells, descendants...)
 		}
 
-		if !s.cells[cellIndex].alive && s.iteration-s.cells[cellIndex].diedAt > 5 {
+		if !s.cells[cellIndex].alive && s.iteration-s.cells[cellIndex].diedAt > 10 {
 			waste += s.cells[cellIndex].getWasteAfterDeath()
 		} else {
 			if s.cells[cellIndex].alive {
@@ -39,19 +97,34 @@ func (s *Sim) RunStep() {
 
 	}
 
+	for name, number := range species {
+		data.Procreation.Species = append(data.Procreation.Species, SpeciesData{
+			name,
+			number,
+		})
+	}
+
 	s.iteration++
 	s.cells = nextGenCells
 	s.env.changeToxicity(waste)
 
 	fmt.Printf(
-		"Iteration %d, cell count: %d, alive cells: %d, waste: %.4f, tolerance: %.4f-%.4f\n",
+		"Iteration %d, cell count: %d, alive cells: %5d, waste: %.4f, tolerance: %.2f-%.2f, %d species",
 		s.iteration,
 		len(s.cells),
 		s.getAliveCells(),
 		s.env.toxicity,
-		minTolerance,
-		maxTolerance,
+		data.Waste.MinTolerance,
+		data.Waste.MaxTolerance,
+		len(data.Procreation.Species),
 	)
+	if data.Procreation.CanProcreate {
+		fmt.Printf("\n")
+	} else {
+		fmt.Print(" x\n")
+	}
+
+	return data
 }
 
 func (s Sim) getAliveCells() int {
@@ -73,7 +146,7 @@ func (s Sim) GetCellCount() int {
 func CreateSim() Sim {
 	startCells := []Cell{}
 
-	for i := 0; i < 6; i++ {
+	for i := 0; i < 10; i++ {
 		startCells = append(startCells, getRandomCell(i))
 	}
 

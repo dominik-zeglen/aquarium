@@ -1,6 +1,7 @@
 package sim
 
 import (
+	"fmt"
 	"math/rand"
 
 	gauss "github.com/chobie/go-gaussian"
@@ -13,8 +14,10 @@ type Cell struct {
 	action   Action
 	target   r2.Point
 
-	Shape string
-	size  int
+	shape   string
+	species string
+
+	size int
 
 	membrane int
 	enzymes  int
@@ -76,10 +79,21 @@ func (c Cell) shouldEat() bool {
 	return c.maxSatiation > c.satiation
 }
 
+func (c Cell) getProcessedWaste(e Environment) float64 {
+	if e.toxicity > 0 {
+		waste := (float64(c.funghi)) * .2 * (e.toxicity - .5)
+		if waste > 0 {
+			return waste
+		}
+	}
+
+	return 0
+}
+
 func (c Cell) getWaste(e Environment) float64 {
 	waste := float64(c.size)
 	if (e.toxicity) > 0 {
-		waste -= float64(c.funghi) * 0.4
+		waste -= c.getProcessedWaste(e)
 	}
 
 	return waste / 6e8
@@ -93,7 +107,7 @@ func (c *Cell) eat(e Environment) {
 	c.satiation -= c.consumption
 	food := int(float32(c.herbivore) * 1.2)
 	if e.toxicity > 0 {
-		food += int(float32(c.funghi) * 0.4)
+		food += int(c.getProcessedWaste(e))
 	}
 
 	if food > c.getLeftToFull() {
@@ -159,7 +173,7 @@ func (c *Cell) mutate() {
 		c.consumption += rand.Intn(3) - 1
 		break
 	case 5:
-		c.division += int8(rand.Intn(3) - 1)
+		c.procreationCd += int8(rand.Intn(3) - 1)
 		break
 	case 6:
 		c.wasteTolerance += float64(rand.Intn(3)-1) / 4
@@ -170,7 +184,7 @@ func (c *Cell) mutate() {
 	}
 
 	c.validate()
-	if rand.Float32() > .999 {
+	if rand.Float32() > .5 {
 		c.mutate()
 	}
 }
@@ -199,8 +213,9 @@ func (c *Cell) procreate(canProcreate bool, iteration int, lastID int) []Cell {
 
 			c.satiation = food
 
-			if rand.Float32() > .99 {
+			if rand.Float32() > .95 {
 				c.mutate()
+				c.generateSpeciesName(iteration)
 			}
 
 			descendants = append(descendants, descendant)
@@ -217,6 +232,10 @@ func (c *Cell) move() {
 		Normalize().
 		Mul(float64(c.mobility / (*c).getMass()))
 	c.position = c.position.Add(moveVec)
+}
+
+func (c *Cell) generateSpeciesName(iteration int) {
+	c.species = fmt.Sprintf("%d-%d", iteration, c.id)
 }
 
 func (c Cell) shouldDie(env Environment, iteration int) bool {
@@ -275,7 +294,7 @@ func getRandomFunghiCell() Cell {
 	c.consumption = 10
 	c.procreationCd = int8(rand.Intn(4) + 8)
 
-	c.wasteTolerance = rand.Float64()*3 + 10
+	c.wasteTolerance = float64(rand.Intn(3)-1)*2 + 10
 
 	return c
 }
@@ -306,7 +325,7 @@ func getRandomHerbivoreCell() Cell {
 	c.consumption = 10
 	c.procreationCd = int8(rand.Intn(4) + 8)
 
-	c.wasteTolerance = rand.Float64()*6 + 4
+	c.wasteTolerance = float64(rand.Intn(3)-1)*6 + 4
 
 	return c
 }
@@ -324,6 +343,7 @@ func getRandomCell(id int) Cell {
 	c.action = idle
 	c.alive = true
 	c.bornAt = 0
+	c.generateSpeciesName(0)
 
 	return c
 }
