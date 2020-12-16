@@ -10,7 +10,7 @@ import (
 func save(data []sim.SimData) {
 	file, _ := json.Marshal(data)
 
-	_ = ioutil.WriteFile("data.json", file, 0644)
+	_ = ioutil.WriteFile("out/data.json", file, 0644)
 }
 
 func main() {
