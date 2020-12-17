@@ -95,7 +95,7 @@ func (c *Cell) procreate(
 
 			c.satiation = food
 
-			if rand.Float32() > .99 {
+			if rand.Float32() > .95 {
 				species := c.species.mutate()
 				species.EmergedAt = iteration
 				descendant.species = addSpecies(species)

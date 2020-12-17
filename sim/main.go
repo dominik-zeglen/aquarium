@@ -38,7 +38,7 @@ type SimData struct {
 	Procreation    ProcreationData
 }
 
-const maxCells = 1e4
+const maxCells = 1e5
 
 func (s *Sim) RunStep() SimData {
 	s.iteration++
