@@ -156,28 +156,25 @@ func (s *Sim) removeSpecies(id int) {
 
 func (s *Sim) cleanupSpecies() {
 	idsToDelete := []int{}
-	for speciesIndex := range s.species {
-		if !s.species[speciesIndex].extinct {
-			alive := false
-			found := false
-			for cellIndex := range s.cells {
-				if s.cells[cellIndex].species.ID == s.species[speciesIndex].ID {
-					found = true
-					if s.cells[cellIndex].alive {
-						alive = true
-						break
-					}
+	for speciesIndex, species := range s.species {
+		extinct := true
+		found := false
+		for cellIndex := range s.cells {
+			if s.cells[cellIndex].species.ID == species.ID {
+				found = true
+				if s.cells[cellIndex].alive {
+					extinct = false
+					break
 				}
 			}
-
-			if !found {
-				idsToDelete = append(idsToDelete, s.species[speciesIndex].ID)
-			}
-			if !alive {
-				s.species[speciesIndex].extinct = true
-			}
 		}
+
+		if !found {
+			idsToDelete = append(idsToDelete, s.species[speciesIndex].ID)
+		}
+		s.species[speciesIndex].Extinct = extinct
 	}
+
 	for _, id := range idsToDelete {
 		s.removeSpecies(id)
 	}
@@ -186,7 +183,7 @@ func (s *Sim) cleanupSpecies() {
 func (s Sim) GetAliveSpecies() int {
 	counter := 0
 	for speciesIndex := range s.species {
-		if !s.species[speciesIndex].extinct {
+		if !s.species[speciesIndex].Extinct {
 			counter++
 		}
 	}

@@ -84,20 +84,21 @@ func (c *Cell) procreate(
 		food := c.species.maxCapacity / int(c.species.division+1)
 
 		for i := 0; i < int(c.species.division); i++ {
-			descendant := *c
+			descendant := Cell{}
 			descendant.id = lastID + i + 1
 			descendant.satiation = food
 			descendant.action = idle
 			descendant.bornAt = iteration
 			descendant.capacity = 0
 			descendant.procreatedAt = iteration
+			descendant.alive = true
 
 			c.satiation = food
 
 			if rand.Float32() > .99 {
 				species := c.species.mutate()
-				species.emergedAt = iteration
-				c.species = addSpecies(species)
+				species.EmergedAt = iteration
+				descendant.species = addSpecies(species)
 			} else {
 				descendant.species = c.species
 			}

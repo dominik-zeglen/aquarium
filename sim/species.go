@@ -6,9 +6,9 @@ import (
 )
 
 type Species struct {
-	ID        int `json:"id"`
-	emergedAt int
-	extinct   bool
+	ID        int  `json:"id"`
+	EmergedAt int  `json:"emergedAt"`
+	Extinct   bool `json:"extinct"`
 
 	shape string
 
@@ -44,7 +44,7 @@ func (s Species) getName() string {
 	if s.Herbivore > s.Funghi {
 		diet = "H"
 	}
-	return fmt.Sprintf("%s-%d-%d", diet, s.emergedAt, s.ID)
+	return fmt.Sprintf("%s-%d-%d", diet, s.EmergedAt, s.ID)
 }
 
 func (s Species) getMaxHP() int {
@@ -110,41 +110,42 @@ func (s *Species) validate() {
 }
 
 func (s Species) mutate() Species {
+	n := s
 	attr := rand.Intn(7)
 
 	switch attr {
 	case 0:
-		s.Carnivore += int8(rand.Intn(3) - 1)
+		n.Carnivore += int8(rand.Intn(3) - 1)
 		break
 	case 1:
-		s.Herbivore += int8(rand.Intn(3) - 1)
+		n.Herbivore += int8(rand.Intn(3) - 1)
 		break
 	case 2:
-		s.Funghi += int8(rand.Intn(3) - 1)
+		n.Funghi += int8(rand.Intn(3) - 1)
 		break
 	case 3:
-		s.maxCapacity += rand.Intn(3) - 1
+		n.maxCapacity += rand.Intn(3) - 1
 		break
 	case 4:
-		s.consumption += rand.Intn(3) - 1
+		n.consumption += rand.Intn(3) - 1
 		break
 	case 5:
-		s.procreationCd += int8(rand.Intn(3) - 1)
+		n.procreationCd += int8(rand.Intn(3) - 1)
 		break
 	case 6:
-		s.wasteTolerance += float64(rand.Intn(3)-1) / 4
+		n.wasteTolerance += float64(rand.Intn(3)-1) / 4
 		break
 	case 7:
-		s.timeToDie += rand.Intn(3) - 1
+		n.timeToDie += rand.Intn(3) - 1
 		break
 	}
 
-	s.validate()
+	n.validate()
 	if rand.Float32() > .5 {
-		s.mutate()
+		n.mutate()
 	}
 
-	return s
+	return n
 }
 
 func getRandomFunghi() Species {

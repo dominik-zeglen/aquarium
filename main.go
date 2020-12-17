@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
+	"net/http"
 
 	"github.com/dominik-zeglen/aquarium/sim"
 )
@@ -18,6 +19,13 @@ func main() {
 	s.Create()
 
 	data := []sim.SimData{}
+
+	http.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
+		res.Header().Add("content-type", "application/json")
+		d, _ := json.Marshal(data[len(data)-1])
+		res.Write(d)
+	})
+	go http.ListenAndServe(":8000", nil)
 
 	for {
 		if s.GetCellCount() == 0 {
