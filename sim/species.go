@@ -101,7 +101,7 @@ func (s *Species) validate() {
 	if s.Funghi < 0 {
 		s.Funghi = 0
 	}
-	if s.consumption < 1 {
+	if s.consumption < 3 {
 		s.consumption = 1
 	}
 	if s.division < 0 {
