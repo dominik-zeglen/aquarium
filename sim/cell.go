@@ -1,7 +1,6 @@
 package sim
 
 import (
-	"fmt"
 	"math/rand"
 
 	gauss "github.com/chobie/go-gaussian"
@@ -14,108 +13,39 @@ type Cell struct {
 	action   Action
 	target   r2.Point
 
-	shape   string
-	species string
+	species *Species
 
-	size int
+	alive        bool
+	hp           int
+	bornAt       int
+	diedAt       int
+	procreatedAt int
 
-	membrane int
-	enzymes  int
-
-	herbivore int8
-	carnivore int8
-	funghi    int8
-
-	alive          bool
-	timeToDie      int
-	hp             int
-	bornAt         int
-	diedAt         int
-	procreatedAt   int
-	wasteTolerance float64
-
-	satiation    int
-	maxSatiation int
-	consumption  int
-	transport    int
-	capacity     int
-	maxCapacity  int
-
-	division      int8
-	connectivity  int8
-	procreationCd int8
-
-	mobility int
-
-	// True if cell reproduces by budding
-	reproducingMethod bool
-}
-
-func (c Cell) getMaxHP() int {
-	return c.size * 23
-}
-
-func (c Cell) getMass() int {
-	return c.size * 10
-}
-
-func (c Cell) getFoodValue() int {
-	return c.size * 2
-}
-
-func (c Cell) getDefence() int {
-	return c.membrane / 10
-}
-
-func (c Cell) getAttack() int {
-	return (int(c.carnivore)*2 + c.size + c.enzymes) / 3
+	satiation int
+	capacity  int
 }
 
 func (c Cell) getLeftToFull() int {
-	return c.maxSatiation - c.satiation
+	return c.species.maxSatiation - c.satiation
 }
 
 func (c Cell) shouldEat() bool {
-	return c.maxSatiation > c.satiation
-}
-
-func (c Cell) getProcessedWaste(e Environment) float64 {
-	if e.toxicity > 0 {
-		waste := (float64(c.funghi)) * .2 * (e.toxicity - .5)
-		if waste > 0 {
-			return waste
-		}
-	}
-
-	return 0
-}
-
-func (c Cell) getWaste(e Environment) float64 {
-	waste := float64(c.size)
-	if (e.toxicity) > 0 {
-		waste -= c.getProcessedWaste(e)
-	}
-
-	return waste / 6e8
-}
-
-func (c Cell) getWasteAfterDeath() float64 {
-	return (float64(c.size)) / 8e8
+	return c.species.maxSatiation > c.satiation
 }
 
 func (c *Cell) eat(e Environment) {
-	c.satiation -= c.consumption
-	food := int(float32(c.herbivore) * 1.2)
+	c.satiation -= c.species.consumption
+	food := int(float32(c.species.Herbivore) * 1.2)
 	if e.toxicity > 0 {
-		food += int(c.getProcessedWaste(e))
+		food += int(c.species.getProcessedWaste(e))
 	}
 
 	if food > c.getLeftToFull() {
-		c.satiation = c.maxSatiation
+		c.satiation = c.species.maxSatiation
 		leftover := food - c.getLeftToFull()
 
-		if leftover > c.maxCapacity {
-			c.capacity = c.maxCapacity
+		if leftover > c.species.maxCapacity {
+			c.capacity = c.species.maxCapacity
 		} else {
 			c.capacity += leftover
 		}
@@ -127,7 +57,7 @@ func (c *Cell) eat(e Environment) {
 	if c.shouldEat() {
 		if c.capacity > c.getLeftToFull() {
 			c.capacity -= c.getLeftToFull()
-			c.satiation = c.maxSatiation
+			c.satiation = c.species.maxSatiation
 		} else {
 			c.satiation += c.capacity
 			c.capacity = 0
@@ -135,89 +65,44 @@ func (c *Cell) eat(e Environment) {
 	}
 }
 
-func (c *Cell) validate() {
-	if c.carnivore < 0 {
-		c.carnivore = 0
-	}
-	if c.herbivore < 0 {
-		c.herbivore = 0
-	}
-	if c.funghi < 0 {
-		c.funghi = 0
-	}
-	if c.consumption < 1 {
-		c.consumption = 1
-	}
-	if c.division < 0 {
-		c.division = 0
-	}
-}
-
-func (c *Cell) mutate() {
-	attr := rand.Intn(7)
-
-	switch attr {
-	case 0:
-		c.carnivore += int8(rand.Intn(3) - 1)
-		break
-	case 1:
-		c.herbivore += int8(rand.Intn(3) - 1)
-		break
-	case 2:
-		c.funghi += int8(rand.Intn(3) - 1)
-		break
-	case 3:
-		c.capacity += rand.Intn(3) - 1
-		break
-	case 4:
-		c.consumption += rand.Intn(3) - 1
-		break
-	case 5:
-		c.procreationCd += int8(rand.Intn(3) - 1)
-		break
-	case 6:
-		c.wasteTolerance += float64(rand.Intn(3)-1) / 4
-		break
-	case 7:
-		c.timeToDie += rand.Intn(3) - 1
-		break
-	}
-
-	c.validate()
-	if rand.Float32() > .5 {
-		c.mutate()
-	}
-}
-
 func (c Cell) canProcreate(iteration int) bool {
 	if c.procreatedAt == 0 {
 		return !c.shouldEat()
 	}
-	return iteration-c.procreatedAt > int(c.procreationCd) && !c.shouldEat()
+	return iteration-c.procreatedAt > int(c.species.procreationCd) && !c.shouldEat()
 }
 
-func (c *Cell) procreate(canProcreate bool, iteration int, lastID int) []Cell {
+func (c *Cell) procreate(
+	canProcreate bool,
+	iteration int,
+	lastID int,
+	addSpecies AddSpecies,
+) []Cell {
 	descendants := []Cell{}
-	if canProcreate && c.canProcreate(iteration) && rand.Float32() > .8 {
-		food := c.maxCapacity / int(c.division+1)
 
-		for i := 0; i < int(c.division); i++ {
+	if canProcreate && c.canProcreate(iteration) && rand.Float32() > .8 {
+		food := c.species.maxCapacity / int(c.species.division+1)
+
+		for i := 0; i < int(c.species.division); i++ {
 			descendant := *c
 			descendant.id = lastID + i + 1
 			descendant.satiation = food
 			descendant.action = idle
 			descendant.bornAt = iteration
-			descendant.hp = c.getMaxHP()
 			descendant.capacity = 0
 			descendant.procreatedAt = iteration
 
 			c.satiation = food
 
-			if rand.Float32() > .95 {
-				c.mutate()
-				c.generateSpeciesName(iteration)
+			if rand.Float32() > .99 {
+				species := c.species.mutate()
+				species.emergedAt = iteration
+				c.species = addSpecies(species)
+			} else {
+				descendant.species = c.species
 			}
 
+			descendant.hp = c.species.getMaxHP()
 			descendants = append(descendants, descendant)
 		}
 	}
@@ -230,21 +115,17 @@ func (c *Cell) move() {
 		target.
 		Sub(c.position).
 		Normalize().
-		Mul(float64(c.mobility / (*c).getMass()))
+		Mul(float64(c.species.mobility / c.species.getMass()))
 	c.position = c.position.Add(moveVec)
-}
-
-func (c *Cell) generateSpeciesName(iteration int) {
-	c.species = fmt.Sprintf("%d-%d", iteration, c.id)
 }
 
 func (c Cell) shouldDie(env Environment, iteration int) bool {
 	var prob float64
-	if env.toxicity > c.wasteTolerance {
-		prob = rand.Float64() + (env.toxicity - c.wasteTolerance)
+	if env.toxicity > c.species.wasteTolerance {
+		prob = rand.Float64() + (env.toxicity - c.species.wasteTolerance)
 	}
 
-	p := gauss.NewGaussian(float64(c.timeToDie), 10)
+	p := gauss.NewGaussian(float64(c.species.timeToDie), 10)
 	prob += p.Cdf(float64(iteration - c.bornAt))
 	roll := rand.Float64()
 	shouldDie := prob > roll
@@ -252,13 +133,19 @@ func (c Cell) shouldDie(env Environment, iteration int) bool {
 	return shouldDie
 }
 
-func (c *Cell) sim(env Environment, iteration int, lastID int, canProcreate bool) []Cell {
+func (c *Cell) sim(
+	env Environment,
+	iteration int,
+	lastID int,
+	addSpecies AddSpecies,
+	canProcreate bool,
+) []Cell {
 	descendants := []Cell{}
 
 	if c.alive {
 		c.eat(env)
 		c.move()
-		descendants = c.procreate(canProcreate, iteration, lastID)
+		descendants = c.procreate(canProcreate, iteration, lastID, addSpecies)
 		if c.shouldDie(env, iteration) {
 			c.alive = false
 			c.diedAt = iteration
@@ -268,82 +155,22 @@ func (c *Cell) sim(env Environment, iteration int, lastID int, canProcreate bool
 	return descendants
 }
 
-func getRandomFunghiCell() Cell {
-	points := int((17 * 100) / (3 + rand.Float64()))
-
-	c := Cell{}
-
-	c.capacity = rand.Intn(30)
-	points -= c.capacity
-
-	c.size = rand.Intn(30) + 1
-	points -= c.size
-
-	c.funghi = int8(rand.Intn(100))
-	points -= int(c.funghi)
-
-	c.division = 1
-	points -= int(c.division * 10)
-
-	c.timeToDie = int(rand.NormFloat64()*20) + 30
-	points -= c.timeToDie * 10
-
-	c.maxSatiation = int(rand.Intn(100)) + 300
-	c.satiation = c.maxSatiation / 2
-
-	c.consumption = 10
-	c.procreationCd = int8(rand.Intn(4) + 8)
-
-	c.wasteTolerance = float64(rand.Intn(3)-1)*2 + 10
-
-	return c
-}
-
-func getRandomHerbivoreCell() Cell {
-	points := int((17 * 100) / (3 + rand.Float64()))
-
-	c := Cell{}
-
-	c.capacity = rand.Intn(30)
-	points -= c.capacity
-
-	c.size = rand.Intn(30) + 1
-	points -= c.size
-
-	c.herbivore = int8(rand.Intn(100))
-	points -= int(c.herbivore)
-
-	c.division = 1
-	points -= int(c.division * 10)
-
-	c.timeToDie = int(rand.NormFloat64()*20) + 30
-	points -= c.timeToDie * 10
-
-	c.maxSatiation = int(rand.Intn(100)) + 300
-	c.satiation = c.maxSatiation / 2
-
-	c.consumption = 10
-	c.procreationCd = int8(rand.Intn(4) + 8)
-
-	c.wasteTolerance = float64(rand.Intn(3)-1)*6 + 4
-
-	return c
-}
-
-func getRandomCell(id int) Cell {
+func getRandomCell(id int, addSpecies AddSpecies) Cell {
 	var c Cell
+	var s Species
 
 	if rand.Float32() > .5 {
-		c = getRandomHerbivoreCell()
+		s = getRandomHerbivore()
 	} else {
-		c = getRandomFunghiCell()
+		s = getRandomFunghi()
 	}
+
+	c.species = addSpecies(s)
 
 	c.id = id
 	c.action = idle
 	c.alive = true
-	c.bornAt = 0
-	c.generateSpeciesName(0)
+	c.satiation = c.species.maxSatiation / 2
 
 	return c
 }

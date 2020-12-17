@@ -14,7 +14,9 @@ func save(data []sim.SimData) {
 }
 
 func main() {
-	s := sim.CreateSim()
+	s := sim.Sim{}
+	s.Create()
+
 	data := []sim.SimData{}
 
 	for {
@@ -22,9 +24,9 @@ func main() {
 			break
 		}
 		data = append(data, s.RunStep())
-		if data[len(data)-1].Iteration > 1000 {
-			break
-		}
+		// if data[len(data)-1].Iteration > 1000 {
+		// 	break
+		// }
 	}
 
 	defer save(data)
