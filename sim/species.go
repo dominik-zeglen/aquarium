@@ -21,8 +21,8 @@ type Species struct {
 	Carnivore int8 `json:"carnivore"`
 	Funghi    int8 `json:"funghi"`
 
-	timeToDie      int
-	wasteTolerance float64
+	TimeToDie      int     `json:"timeToDie"`
+	WasteTolerance float64 `json:"wasteTolerance"`
 
 	maxSatiation int
 	consumption  int
@@ -68,8 +68,8 @@ func (s Species) getAttack() int {
 }
 
 func (s Species) getProcessedWaste(e Environment) float64 {
-	if e.toxicity > 0 {
-		waste := (float64(s.Funghi)) * .2 * (e.toxicity - .5)
+	if e.toxicity > 0 && s.Funghi > 0 {
+		waste := (float64(s.Funghi)) * .4 * (e.toxicity - .5)
 		if waste > 0 {
 			return waste
 		}
@@ -102,108 +102,117 @@ func (s *Species) validate() {
 		s.Funghi = 0
 	}
 	if s.consumption < 3 {
-		s.consumption = 1
+		s.consumption = 3
 	}
 	if s.division < 0 {
 		s.division = 0
 	}
+	if s.TimeToDie > 60 {
+		s.TimeToDie = 60
+	}
+	if s.procreationCd < 5 {
+		s.procreationCd = 5
+	}
+}
+
+func (s Species) getDietPoints() int {
+	diets := 0
+	dietPoints := 0
+
+	if s.Carnivore > 0 {
+		diets++
+		dietPoints += int(s.Carnivore)
+	}
+	if s.Herbivore > 0 {
+		diets++
+		dietPoints += int(s.Herbivore)
+	}
+	if s.Funghi > 0 {
+		diets++
+		dietPoints += int(s.Funghi)
+	}
+
+	return dietPoints * diets
 }
 
 func (s Species) mutate() Species {
 	n := s
-	attr := rand.Intn(7)
+	attr := rand.Float64()
+	value := rand.Intn(2)*2 - 1
 
-	switch attr {
-	case 0:
-		n.Carnivore += int8(rand.Intn(3) - 1)
-		break
-	case 1:
-		n.Herbivore += int8(rand.Intn(3) - 1)
-		break
-	case 2:
-		n.Funghi += int8(rand.Intn(3) - 1)
-		break
-	case 3:
-		n.maxCapacity += rand.Intn(3) - 1
-		break
-	case 4:
-		n.consumption += rand.Intn(3) - 1
-		break
-	case 5:
-		n.procreationCd += int8(rand.Intn(3) - 1)
-		break
-	case 6:
-		n.wasteTolerance += float64(rand.Intn(3)-1) / 4
-		break
-	case 7:
-		n.timeToDie += rand.Intn(3) - 1
-		break
+	for attr < .21 && n.getDietPoints() > 100 && value > 0 {
+		attr = rand.Float64()
+	}
+
+	if attr < .07 {
+		n.Carnivore += int8(value * 4)
+	} else if attr < .14 {
+		n.Herbivore += int8(value * 4)
+	} else if attr < .21 {
+		n.Funghi += int8(value * 4)
+	}
+
+	if attr > .21 && attr > .41 {
+		n.maxCapacity += value
+	}
+
+	if attr > .41 && attr < .61 {
+		n.consumption += value
+	}
+
+	if attr > .61 && attr < .63 {
+		n.TimeToDie += value
+	}
+
+	if attr > .63 && attr < .73 {
+		n.procreationCd += int8(value)
+	}
+
+	if attr > .73 && attr < .88 {
+		n.WasteTolerance += float64(value) / 4
+	}
+
+	if attr > .88 {
+		n.maxSatiation += value
 	}
 
 	n.validate()
-	if rand.Float32() > .5 {
-		n.mutate()
+	if rand.Float32() > .33 {
+		n = n.mutate()
 	}
 
 	return n
 }
 
-func getRandomFunghi() Species {
-	points := int((17 * 100) / (3 + rand.Float64()))
-
+func getRandomHerbivore() Species {
 	s := Species{}
 
 	s.maxCapacity = rand.Intn(30)
-	points -= s.maxCapacity
 
 	s.size = rand.Intn(30) + 1
-	points -= s.size
 
-	s.Funghi = int8(rand.Intn(100))
-	points -= int(s.Funghi)
+	s.Herbivore = int8(rand.Intn(30))
 
 	s.division = 1
-	points -= int(s.division * 10)
 
-	s.timeToDie = int(rand.NormFloat64()*20) + 30
-	points -= s.timeToDie * 10
+	s.TimeToDie = 30
 
 	s.maxSatiation = int(rand.Intn(100)) + 300
 
 	s.consumption = 10
 	s.procreationCd = int8(rand.Intn(4) + 8)
 
-	s.wasteTolerance = float64(rand.Intn(3)-1)*2 + 10
+	s.WasteTolerance = float64(rand.Intn(3)-1)*3 + 13.5
 
 	return s
 }
 
-func getRandomHerbivore() Species {
-	points := int((17 * 100) / (3 + rand.Float64()))
-
-	s := Species{}
-
-	s.maxCapacity = rand.Intn(30)
-	points -= s.maxCapacity
-
-	s.size = rand.Intn(30) + 1
-	points -= s.size
-
-	s.Herbivore = int8(rand.Intn(100))
-	points -= int(s.Herbivore)
-
-	s.division = 1
-	points -= int(s.division * 10)
-
-	s.timeToDie = int(rand.NormFloat64()*20) + 30
-	points -= s.timeToDie * 10
-
-	s.maxSatiation = int(rand.Intn(100)) + 300
-
-	s.consumption = 10
-	s.procreationCd = int8(rand.Intn(4) + 8)
-
-	s.wasteTolerance = float64(rand.Intn(3)-1)*6 + 4
+func getRandomFunghi() Species {
+	s := getRandomHerbivore()
+	s.Funghi = s.Herbivore
+	s.Herbivore = 0
+	s.maxSatiation -= 50
+	s.TimeToDie += 0
 
 	return s
 }

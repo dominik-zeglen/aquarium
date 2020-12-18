@@ -1,6 +1,8 @@
 package sim
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type AddSpecies func(species Species) *Species
 
@@ -11,7 +13,6 @@ type Sim struct {
 	iteration int
 }
 
-type SpeciesMap map[string]int
 type SpeciesData struct {
 	Name      string
 	Organisms int
@@ -38,7 +39,7 @@ type SimData struct {
 	Procreation    ProcreationData
 }
 
-const maxCells = 1e5
+const maxCells = 1e4
 
 func (s *Sim) RunStep() SimData {
 	s.iteration++
@@ -63,11 +64,11 @@ func (s *Sim) RunStep() SimData {
 
 	for cellIndex, cell := range s.cells {
 		if cell.alive {
-			if data.Waste.MaxTolerance < cell.species.wasteTolerance {
-				data.Waste.MaxTolerance = cell.species.wasteTolerance
+			if data.Waste.MaxTolerance < cell.species.WasteTolerance {
+				data.Waste.MaxTolerance = cell.species.WasteTolerance
 			}
-			if data.Waste.MinTolerance > cell.species.wasteTolerance {
-				data.Waste.MinTolerance = cell.species.wasteTolerance
+			if data.Waste.MinTolerance > cell.species.WasteTolerance {
+				data.Waste.MinTolerance = cell.species.WasteTolerance
 			}
 
 			if data.Procreation.MaxCd < cell.species.procreationCd {
@@ -107,7 +108,7 @@ func (s *Sim) RunStep() SimData {
 	data.Procreation.Species = s.species
 
 	fmt.Printf(
-		"Iteration %d, cell count: %d, alive cells: %5d, waste: %.4f, tolerance: %.2f-%.2f, %d species",
+		"Iteration %6d, cell count: %5d, alive cells: %5d, waste: %.4f, tolerance: %.2f-%.2f, %3d species",
 		s.iteration,
 		len(s.cells),
 		s.getAliveCells(),
@@ -195,9 +196,19 @@ func (s Sim) GetCellCount() int {
 	return len(s.cells)
 }
 
+func (s *Sim) KillOldestCells() {
+	for i := 2; s.getAliveCells() > maxCells; i++ {
+		for cellIndex := range s.cells {
+			if s.cells[cellIndex].species.TimeToDie+s.cells[cellIndex].bornAt-s.iteration < i {
+				s.cells[cellIndex].alive = false
+			}
+		}
+	}
+}
+
 func (s *Sim) Create() {
 	s.iteration = 0
-	s.env = Environment{1}
+	s.env = Environment{4}
 
 	startCells := []Cell{}
 

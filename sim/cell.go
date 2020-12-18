@@ -95,7 +95,7 @@ func (c *Cell) procreate(
 
 			c.satiation = food
 
-			if rand.Float32() > .95 {
+			if rand.Float32() > .99 {
 				species := c.species.mutate()
 				species.EmergedAt = iteration
 				descendant.species = addSpecies(species)
@@ -121,17 +121,23 @@ func (c *Cell) move() {
 }
 
 func (c Cell) shouldDie(env Environment, iteration int) bool {
-	var prob float64
-	if env.toxicity > c.species.wasteTolerance {
-		prob = rand.Float64() + (env.toxicity - c.species.wasteTolerance)
+	if c.satiation == 0 {
+		return true
 	}
 
-	p := gauss.NewGaussian(float64(c.species.timeToDie), 10)
-	prob += p.Cdf(float64(iteration - c.bornAt))
-	roll := rand.Float64()
-	shouldDie := prob > roll
+	var prob float64
+	if env.toxicity > c.species.WasteTolerance {
+		prob = rand.Float64() + (env.toxicity - c.species.WasteTolerance)
+	}
+	if c.bornAt+c.species.TimeToDie-iteration < 0 {
+		p := gauss.NewGaussian(float64(c.species.TimeToDie), 10)
+		prob += p.Cdf(float64(iteration - c.bornAt))
+	}
 
-	return shouldDie
+	roll := rand.Float64()
+	result := prob > roll
+
+	return result
 }
 
 func (c *Cell) sim(
@@ -171,7 +177,7 @@ func getRandomCell(id int, addSpecies AddSpecies) Cell {
 	c.id = id
 	c.action = idle
 	c.alive = true
-	c.satiation = c.species.maxSatiation / 2
+	c.satiation = 20
 
 	return c
 }

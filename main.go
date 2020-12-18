@@ -27,11 +27,25 @@ func main() {
 	})
 	go http.ListenAndServe(":8000", nil)
 
+	consecutiveNoProcreateIterations := 0
+
 	for {
 		if s.GetCellCount() == 0 {
 			break
 		}
-		data = append(data, s.RunStep())
+		iterationData := s.RunStep()
+		data = append(data, iterationData)
+
+		if !iterationData.Procreation.CanProcreate {
+			consecutiveNoProcreateIterations++
+		} else {
+			consecutiveNoProcreateIterations = 0
+		}
+
+		if consecutiveNoProcreateIterations > 2 {
+			s.KillOldestCells()
+		}
+
 		// if data[len(data)-1].Iteration > 1000 {
 		// 	break
 		// }
