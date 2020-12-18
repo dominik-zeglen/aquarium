@@ -37,7 +37,7 @@ func (c *Cell) eat(e Environment) {
 	c.satiation -= c.species.consumption
 	food := int(float32(c.species.Herbivore) * 1.2)
 	if e.toxicity > 0 {
-		food += int(c.species.getProcessedWaste(e))
+		food += int(c.species.getProcessedWaste(e.getToxicityOnHeight(c.position.Y)))
 	}
 
 	if food > c.getLeftToFull() {
@@ -92,6 +92,7 @@ func (c *Cell) procreate(
 			descendant.capacity = 0
 			descendant.procreatedAt = iteration
 			descendant.alive = true
+			descendant.position = c.position
 
 			c.satiation = food
 
@@ -127,7 +128,7 @@ func (c Cell) shouldDie(env Environment, iteration int) bool {
 
 	var prob float64
 	if env.toxicity > c.species.WasteTolerance {
-		prob = rand.Float64() + (env.toxicity - c.species.WasteTolerance)
+		prob = rand.Float64() + (env.getToxicityOnHeight(c.position.Y) - c.species.WasteTolerance)
 	}
 	if c.bornAt+c.species.TimeToDie-iteration < 0 {
 		p := gauss.NewGaussian(float64(c.species.TimeToDie), 10)
@@ -162,7 +163,7 @@ func (c *Cell) sim(
 	return descendants
 }
 
-func getRandomCell(id int, addSpecies AddSpecies) Cell {
+func getRandomCell(id int, e Environment, addSpecies AddSpecies) Cell {
 	var c Cell
 	var s Species
 
@@ -178,6 +179,10 @@ func getRandomCell(id int, addSpecies AddSpecies) Cell {
 	c.action = idle
 	c.alive = true
 	c.satiation = 20
+	c.position = r2.Point{
+		float64(e.width) * rand.Float64(),
+		float64(e.height) * rand.Float64(),
+	}
 
 	return c
 }

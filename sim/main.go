@@ -28,6 +28,8 @@ type ProcreationData struct {
 	CanProcreate bool
 	MinCd        int8
 	MaxCd        int8
+	MinHeight    float64
+	MaxHeight    float64
 	Species      []Species
 }
 
@@ -39,7 +41,7 @@ type SimData struct {
 	Procreation    ProcreationData
 }
 
-const maxCells = 1e4
+const maxCells = 1e5
 
 func (s *Sim) RunStep() SimData {
 	s.iteration++
@@ -56,7 +58,8 @@ func (s *Sim) RunStep() SimData {
 			Waste:        s.env.toxicity,
 		},
 		Procreation: ProcreationData{
-			MinCd: 127,
+			MinCd:     127,
+			MinHeight: float64(s.env.height),
 		},
 	}
 
@@ -77,6 +80,13 @@ func (s *Sim) RunStep() SimData {
 			if data.Procreation.MinCd > cell.species.procreationCd {
 				data.Procreation.MinCd = cell.species.procreationCd
 			}
+
+			if data.Procreation.MaxHeight < cell.position.Y {
+				data.Procreation.MaxHeight = cell.position.Y
+			}
+			if data.Procreation.MinHeight > cell.position.Y {
+				data.Procreation.MinHeight = cell.position.Y
+			}
 		}
 
 		descendants := s.cells[cellIndex].sim(
@@ -95,7 +105,7 @@ func (s *Sim) RunStep() SimData {
 			waste += s.cells[cellIndex].species.getWasteAfterDeath()
 		} else {
 			if s.cells[cellIndex].alive {
-				waste += s.cells[cellIndex].species.getWaste(s.env)
+				waste += s.cells[cellIndex].species.getWaste(s.env.getToxicityOnHeight(s.cells[cellIndex].position.Y))
 			}
 			nextGenCells = append(nextGenCells, s.cells[cellIndex])
 		}
@@ -208,12 +218,12 @@ func (s *Sim) KillOldestCells() {
 
 func (s *Sim) Create() {
 	s.iteration = 0
-	s.env = Environment{4}
+	s.env = Environment{4, 10000, 10000}
 
 	startCells := []Cell{}
 
-	for i := 0; i < 10; i++ {
-		startCells = append(startCells, getRandomCell(i, s.addSpecies))
+	for i := 0; i < 100; i++ {
+		startCells = append(startCells, getRandomCell(i, s.env, s.addSpecies))
 	}
 
 	s.cells = startCells

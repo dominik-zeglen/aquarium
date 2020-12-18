@@ -45,10 +45,6 @@ func main() {
 		if consecutiveNoProcreateIterations > 2 {
 			s.KillOldestCells()
 		}
-
-		// if data[len(data)-1].Iteration > 1000 {
-		// 	break
-		// }
 	}
 
 	defer save(data)
