@@ -3,7 +3,7 @@ package sim
 import "testing"
 
 func TestEating(t *testing.T) {
-	e := Environment{9}
+	e := Environment{9, 100, 100}
 
 	t.Run("Simple eating by herbivore", func(t *testing.T) {
 		satiation := 5
