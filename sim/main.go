@@ -13,32 +13,27 @@ type Sim struct {
 	iteration int
 }
 
-type SpeciesData struct {
-	Name      string
-	Organisms int
-}
-
 type WasteData struct {
-	Waste        float64
-	MinTolerance float64
-	MaxTolerance float64
+	Waste        float64 `json:"waste"`
+	MinTolerance float64 `json:"minTolerance"`
+	MaxTolerance float64 `json:"maxTolerance"`
 }
 
 type ProcreationData struct {
-	CanProcreate bool
-	MinCd        int8
-	MaxCd        int8
-	MinHeight    float64
-	MaxHeight    float64
-	Species      []Species
+	CanProcreate bool      `json:"canProcreate"`
+	MinCd        int8      `json:"minCd"`
+	MaxCd        int8      `json:"maxCd"`
+	MinHeight    float64   `json:"minHeight"`
+	MaxHeight    float64   `json:"maxHeight"`
+	Species      []Species `json:"species"`
 }
 
 type SimData struct {
-	CellCount      int
-	AliveCellCount int
-	Waste          WasteData
-	Iteration      int
-	Procreation    ProcreationData
+	CellCount      int             `json:"cellCount"`
+	AliveCellCount int             `json:"aliveCellCount"`
+	Waste          WasteData       `json:"waste"`
+	Iteration      int             `json:"iteration"`
+	Procreation    ProcreationData `json:"procreation"`
 }
 
 const maxCells = 1e5

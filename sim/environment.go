@@ -14,5 +14,5 @@ func (e *Environment) changeToxicity(value float64) {
 }
 
 func (e Environment) getToxicityOnHeight(height float64) float64 {
-	return height / float64(e.height) * e.toxicity
+	return e.toxicity / 2 * (height/float64(e.height) + 1)
 }

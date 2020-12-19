@@ -1,6 +1,7 @@
 package sim
 
 import (
+	"math"
 	"math/rand"
 
 	gauss "github.com/chobie/go-gaussian"
@@ -35,7 +36,10 @@ func (c Cell) shouldEat() bool {
 
 func (c *Cell) eat(e Environment) {
 	c.satiation -= c.species.consumption
-	food := int(float32(c.species.Herbivore) * 1.2)
+	food := 0
+	if c.species.Herbivore > 0 {
+		food += int(float64(c.species.Herbivore) * 2 * (1 - c.position.Y/float64(e.height)))
+	}
 	if e.toxicity > 0 {
 		food += int(c.species.getProcessedWaste(e.getToxicityOnHeight(c.position.Y)))
 	}
@@ -76,6 +80,7 @@ func (c *Cell) procreate(
 	canProcreate bool,
 	iteration int,
 	lastID int,
+	env Environment,
 	addSpecies AddSpecies,
 ) []Cell {
 	descendants := []Cell{}
@@ -92,11 +97,38 @@ func (c *Cell) procreate(
 			descendant.capacity = 0
 			descendant.procreatedAt = iteration
 			descendant.alive = true
-			descendant.position = c.position
+
+			do := true
+			var vec r2.Point
+			var vecCell r2.Point
+			var vecDescendant r2.Point
+
+			for do || isOutOfBounds(vecCell, env) || isOutOfBounds(vecDescendant, env) {
+				angle := rand.Float64() * 2 * 3.14
+				vec = (r2.Point{
+					X: math.Cos(angle),
+					Y: math.Sin(angle),
+				}).Mul(float64(c.species.size) / 20)
+
+				vecDescendant = c.position.Add(vec)
+				vecCell = c.position.Sub(vec)
+
+				if isOutOfBounds(vecCell, env) {
+					vecCell = c.position
+					vecDescendant = c.position.Add(vec.Mul(2))
+				} else if isOutOfBounds(vecDescendant, env) {
+					vecDescendant = c.position
+					vecDescendant = c.position.Add(vec.Mul(2))
+				}
+				do = false
+			}
+
+			descendant.position = c.position.Add(vec)
+			c.position = c.position.Sub(vec)
 
 			c.satiation = food
 
-			if rand.Float32() > .99 {
+			if rand.Float32() > .995 {
 				species := c.species.mutate()
 				species.EmergedAt = iteration
 				descendant.species = addSpecies(species)
@@ -153,7 +185,7 @@ func (c *Cell) sim(
 	if c.alive {
 		c.eat(env)
 		c.move()
-		descendants = c.procreate(canProcreate, iteration, lastID, addSpecies)
+		descendants = c.procreate(canProcreate, iteration, lastID, env, addSpecies)
 		if c.shouldDie(env, iteration) {
 			c.alive = false
 			c.diedAt = iteration
