@@ -163,18 +163,15 @@ func (s *Sim) removeSpecies(id int) {
 }
 
 func (s *Sim) cleanupSpecies() {
+	specimenCount := make(map[int]int, len(s.species))
 	idsToDelete := []int{}
+
+	for cellIndex := range s.cells {
+		specimenCount[s.cells[cellIndex].species.ID]++
+	}
+
 	for speciesIndex, species := range s.species {
-		found := false
-		count := 0
-		for cellIndex := range s.cells {
-			if s.cells[cellIndex].species.ID == species.ID {
-				found = true
-				if s.cells[cellIndex].alive {
-					count++
-				}
-			}
-		}
+		count, found := specimenCount[species.ID]
 
 		if !found {
 			idsToDelete = append(idsToDelete, s.species[speciesIndex].ID)
