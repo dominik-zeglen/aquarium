@@ -98,45 +98,27 @@ func (c *Cell) procreate(
 			descendant.procreatedAt = iteration
 			descendant.alive = true
 
-			do := true
-			var vec r2.Point
-			var vecCell r2.Point
-			var vecDescendant r2.Point
-
-			for do || isOutOfBounds(vecCell, env) || isOutOfBounds(vecDescendant, env) {
-				angle := rand.Float64() * 2 * 3.14
-				vec = (r2.Point{
-					X: math.Cos(angle),
-					Y: math.Sin(angle),
-				}).Mul(float64(c.species.size) / 5)
-
-				vecDescendant = c.position.Add(vec)
-				vecCell = c.position.Sub(vec)
-
-				if isOutOfBounds(vecCell, env) {
-					vecCell = c.position
-					vecDescendant = c.position.Add(vec.Mul(2))
-				} else if isOutOfBounds(vecDescendant, env) {
-					vecDescendant = c.position
-					vecDescendant = c.position.Add(vec.Mul(2))
-				}
-				do = false
-			}
+			angle := rand.Float64() * 2 * 3.14
+			vec := (r2.Point{
+				X: math.Cos(angle),
+				Y: math.Sin(angle),
+			}).Mul(float64(c.species.size))
 
 			descendant.position = c.position.Add(vec)
 			c.position = c.position.Sub(vec)
 
 			c.satiation = food
+			c.bornAt = iteration
 
 			if rand.Float32() > .99 {
 				species := c.species.mutate()
 				species.EmergedAt = iteration
-				descendant.species = addSpecies(species)
-			} else {
-				descendant.species = c.species
+				c.species = addSpecies(species)
 			}
 
-			descendant.hp = c.species.getMaxHP()
+			descendant.species = c.species
+			descendant.hp = descendant.species.getMaxHP()
+
 			descendants = append(descendants, descendant)
 		}
 	}
@@ -154,7 +136,7 @@ func (c *Cell) move() {
 }
 
 func (c Cell) shouldDie(env Environment, iteration int) bool {
-	if c.satiation == 0 {
+	if c.satiation == 0 || isOutOfBounds(c.position, env) {
 		return true
 	}
 

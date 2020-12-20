@@ -9,6 +9,7 @@ type Species struct {
 	ID        int  `json:"id"`
 	EmergedAt int  `json:"emergedAt"`
 	Extinct   bool `json:"extinct"`
+	Count     int  `json:"count"`
 
 	shape string
 
@@ -128,6 +129,10 @@ func (s *Species) validate() bool {
 		s.maxSatiation = 50
 		return false
 	}
+	if s.size < 10 {
+		s.size = 10
+		return false
+	}
 
 	return true
 }
@@ -218,8 +223,12 @@ func (s Species) mutateOnce() Species {
 			n.WasteTolerance += float64(value) / 4
 		}
 
-		if attr > .88 {
+		if attr > .88 && attr < .95 {
 			n.maxSatiation += value
+		}
+
+		if attr > .95 {
+			n.size += value
 		}
 
 		do = false

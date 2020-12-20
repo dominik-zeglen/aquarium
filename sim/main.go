@@ -165,14 +165,13 @@ func (s *Sim) removeSpecies(id int) {
 func (s *Sim) cleanupSpecies() {
 	idsToDelete := []int{}
 	for speciesIndex, species := range s.species {
-		extinct := true
 		found := false
+		count := 0
 		for cellIndex := range s.cells {
 			if s.cells[cellIndex].species.ID == species.ID {
 				found = true
 				if s.cells[cellIndex].alive {
-					extinct = false
-					break
+					count++
 				}
 			}
 		}
@@ -180,7 +179,8 @@ func (s *Sim) cleanupSpecies() {
 		if !found {
 			idsToDelete = append(idsToDelete, s.species[speciesIndex].ID)
 		}
-		s.species[speciesIndex].Extinct = extinct
+		s.species[speciesIndex].Extinct = count == 0
+		s.species[speciesIndex].Count = count
 	}
 
 	for _, id := range idsToDelete {
