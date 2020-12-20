@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/dominik-zeglen/aquarium/sim"
 )
@@ -22,6 +23,7 @@ func main() {
 
 	http.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Add("content-type", "application/json")
+		res.Header().Add("Access-Control-Allow-Origin", "*")
 		d, _ := json.Marshal(data[len(data)-1])
 		res.Write(d)
 	})
@@ -49,6 +51,10 @@ func main() {
 		// if iterationData.Iteration == 1 {
 		// 	break
 		// }
+
+		if false {
+			time.Sleep(time.Second / 8)
+		}
 	}
 
 	defer save(data)

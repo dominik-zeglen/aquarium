@@ -69,7 +69,7 @@ func (s Species) getAttack() int {
 
 func (s Species) getProcessedWaste(toxicity float64) float64 {
 	if toxicity > 0 && s.Funghi > 0 {
-		waste := (float64(s.Funghi)) * .4 * (toxicity - .5)
+		waste := (float64(s.Funghi)) * .75 * (toxicity - .5)
 		if waste > 0 {
 			return waste
 		}
@@ -88,31 +88,48 @@ func (s Species) getWaste(toxicity float64) float64 {
 }
 
 func (c Species) getWasteAfterDeath() float64 {
-	return (float64(c.size)) / 8e8
+	return (float64(c.size)) / 6e8
 }
 
-func (s *Species) validate() {
+func (c Species) getConsumption() int {
+	return int(float32(c.maxSatiation) / 20 * float32(c.size) / 30)
+}
+
+func (s *Species) validate() bool {
 	if s.Carnivore < 0 {
 		s.Carnivore = 0
+		return false
 	}
 	if s.Herbivore < 0 {
 		s.Herbivore = 0
+		return false
 	}
 	if s.Funghi < 0 {
 		s.Funghi = 0
+		return false
 	}
 	if s.consumption < 3 {
 		s.consumption = 3
+		return false
 	}
 	if s.division < 0 {
 		s.division = 0
+		return false
 	}
 	if s.TimeToDie > 60 {
 		s.TimeToDie = 60
+		return false
 	}
 	if s.procreationCd < 5 {
 		s.procreationCd = 5
+		return false
 	}
+	if s.maxSatiation < 50 {
+		s.maxSatiation = 50
+		return false
+	}
+
+	return true
 }
 
 func (s Species) getDietPoints() int {
@@ -132,53 +149,80 @@ func (s Species) getDietPoints() int {
 		dietPoints += int(s.Funghi)
 	}
 
-	return dietPoints * diets
+	if diets > 2 {
+		return dietPoints * 2
+	}
+	if diets > 1 {
+		return dietPoints * 3 / 2
+	}
+
+	return dietPoints
 }
 
 func (s Species) mutate() Species {
+	st := s
+
+	if rand.Float32() > .9 {
+		mutationCount := (rand.Intn(40) + 1)
+		for i := 0; i < mutationCount; i++ {
+			st = st.mutateOnce()
+		}
+	} else {
+		do := true
+		for do || rand.Float32() > .5 {
+			st = st.mutateOnce()
+			do = false
+		}
+	}
+
+	return st
+}
+
+func (s Species) mutateOnce() Species {
 	n := s
-	attr := rand.Float64()
-	value := rand.Intn(2)*2 - 1
+	do := true
 
-	for attr < .21 && n.getDietPoints() > 100 && value > 0 {
-		attr = rand.Float64()
-	}
+	for do || !n.validate() {
+		attr := rand.Float64()
+		value := rand.Intn(2)*2 - 1
 
-	if attr < .07 {
-		n.Carnivore += int8(value * 4)
-	} else if attr < .14 {
-		n.Herbivore += int8(value * 4)
-	} else if attr < .21 {
-		n.Funghi += int8(value * 4)
-	}
+		for attr < .21 && n.getDietPoints() > 100 && value > 0 {
+			attr = rand.Float64()
+		}
 
-	if attr > .21 && attr > .41 {
-		n.maxCapacity += value
-	}
+		if attr < .07 {
+			n.Carnivore += int8(value * 4)
+		} else if attr < .14 {
+			n.Herbivore += int8(value * 4)
+		} else if attr < .21 {
+			n.Funghi += int8(value * 4)
+		}
 
-	if attr > .41 && attr < .61 {
-		n.consumption += value
-	}
+		if attr > .21 && attr > .41 {
+			n.maxCapacity += value
+		}
 
-	if attr > .61 && attr < .63 {
-		n.TimeToDie += value
-	}
+		if attr > .41 && attr < .61 {
+			n.consumption += value
+		}
 
-	if attr > .63 && attr < .73 {
-		n.procreationCd += int8(value)
-	}
+		if attr > .61 && attr < .63 {
+			n.TimeToDie += value
+		}
 
-	if attr > .73 && attr < .88 {
-		n.WasteTolerance += float64(value) / 4
-	}
+		if attr > .63 && attr < .73 {
+			n.procreationCd += int8(value)
+		}
 
-	if attr > .88 {
-		n.maxSatiation += value
-	}
+		if attr > .73 && attr < .88 {
+			n.WasteTolerance += float64(value) / 4
+		}
 
-	n.validate()
-	if rand.Float32() > .33 {
-		n = n.mutate()
+		if attr > .88 {
+			n.maxSatiation += value
+		}
+
+		do = false
 	}
 
 	return n
@@ -189,9 +233,9 @@ func getRandomHerbivore() Species {
 
 	s.maxCapacity = rand.Intn(30)
 
-	s.size = rand.Intn(30) + 1
+	s.size = rand.Intn(20) + 10
 
-	s.Herbivore = int8(rand.Intn(30))
+	s.Herbivore = int8(rand.Intn(20)) + 5
 
 	s.division = 1
 
@@ -212,7 +256,7 @@ func getRandomFunghi() Species {
 	s.Funghi = s.Herbivore
 	s.Herbivore = 0
 	s.maxSatiation -= 50
-	s.TimeToDie += 0
+	s.TimeToDie += 5
 
 	return s
 }

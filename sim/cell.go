@@ -35,12 +35,12 @@ func (c Cell) shouldEat() bool {
 }
 
 func (c *Cell) eat(e Environment) {
-	c.satiation -= c.species.consumption
+	c.satiation -= c.species.getConsumption()
 	food := 0
 	if c.species.Herbivore > 0 {
-		food += int(float64(c.species.Herbivore) * 2 * (1 - c.position.Y/float64(e.height)))
+		food += int(float64(c.species.Herbivore) * 3 * (1 - c.position.Y/float64(e.height)))
 	}
-	if e.toxicity > 0 {
+	if c.species.Funghi > 0 {
 		food += int(c.species.getProcessedWaste(e.getToxicityOnHeight(c.position.Y)))
 	}
 
@@ -85,7 +85,7 @@ func (c *Cell) procreate(
 ) []Cell {
 	descendants := []Cell{}
 
-	if canProcreate && c.canProcreate(iteration) && rand.Float32() > .8 {
+	if canProcreate && c.canProcreate(iteration) && rand.Float32() > .7 {
 		food := c.species.maxCapacity / int(c.species.division+1)
 
 		for i := 0; i < int(c.species.division); i++ {
@@ -108,7 +108,7 @@ func (c *Cell) procreate(
 				vec = (r2.Point{
 					X: math.Cos(angle),
 					Y: math.Sin(angle),
-				}).Mul(float64(c.species.size) / 20)
+				}).Mul(float64(c.species.size) / 5)
 
 				vecDescendant = c.position.Add(vec)
 				vecCell = c.position.Sub(vec)
@@ -128,7 +128,7 @@ func (c *Cell) procreate(
 
 			c.satiation = food
 
-			if rand.Float32() > .995 {
+			if rand.Float32() > .99 {
 				species := c.species.mutate()
 				species.EmergedAt = iteration
 				descendant.species = addSpecies(species)

@@ -7,10 +7,11 @@ import (
 type AddSpecies func(species Species) *Species
 
 type Sim struct {
-	cells     []Cell
-	species   []Species
-	env       Environment
-	iteration int
+	cells         []Cell
+	species       []Species
+	env           Environment
+	speciesLastID int
+	iteration     int
 }
 
 type WasteData struct {
@@ -36,7 +37,7 @@ type SimData struct {
 	Procreation    ProcreationData `json:"procreation"`
 }
 
-const maxCells = 1e5
+const maxCells = 3e4
 
 func (s *Sim) RunStep() SimData {
 	s.iteration++
@@ -144,7 +145,8 @@ func (s Sim) getAliveCells() int {
 }
 
 func (s *Sim) addSpecies(species Species) *Species {
-	species.ID = len(s.species) + 1
+	species.ID = s.speciesLastID
+	s.speciesLastID++
 	s.species = append(s.species, species)
 	return &s.species[len(s.species)-1]
 }
@@ -202,7 +204,7 @@ func (s Sim) GetCellCount() int {
 }
 
 func (s *Sim) KillOldestCells() {
-	for i := 2; s.getAliveCells() > maxCells; i++ {
+	for i := 2; s.getAliveCells() >= maxCells; i++ {
 		for cellIndex := range s.cells {
 			if s.cells[cellIndex].species.TimeToDie+s.cells[cellIndex].bornAt-s.iteration < i {
 				s.cells[cellIndex].alive = false
