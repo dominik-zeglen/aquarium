@@ -167,7 +167,7 @@ func (s Species) getDietPoints() int {
 func (s Species) mutate() Species {
 	st := s
 
-	if rand.Float32() > .9 {
+	if rand.Float32() > .99 {
 		mutationCount := (rand.Intn(40) + 1)
 		for i := 0; i < mutationCount; i++ {
 			st = st.mutateOnce()
@@ -256,6 +256,7 @@ func getRandomHerbivore() Species {
 	s.procreationCd = int8(rand.Intn(4) + 8)
 
 	s.WasteTolerance = float64(rand.Intn(16))/4 + 1
+	s.mobility = 20
 
 	return s
 }

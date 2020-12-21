@@ -1,5 +1,7 @@
 package sim
 
+import "math"
+
 type Environment struct {
 	toxicity float64
 	width    int
@@ -15,4 +17,10 @@ func (e *Environment) changeToxicity(value float64) {
 
 func (e Environment) getToxicityOnHeight(height float64) float64 {
 	return e.toxicity / 2 * (height/float64(e.height) + 1)
+}
+
+func (e Environment) getLightOnHeight(height float64, iteration int) float64 {
+	hour := iteration % 24
+	light := math.Abs(float64((hour - 12) * 3))
+	return light * (1 - height/float64(e.height))
 }

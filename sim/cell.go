@@ -1,7 +1,6 @@
 package sim
 
 import (
-	"math"
 	"math/rand"
 
 	gauss "github.com/chobie/go-gaussian"
@@ -34,11 +33,11 @@ func (c Cell) shouldEat() bool {
 	return c.species.maxSatiation > c.satiation
 }
 
-func (c *Cell) eat(e Environment) {
+func (c *Cell) eat(e Environment, iteration int) {
 	c.satiation -= c.species.getConsumption()
 	food := 0
 	if c.species.Herbivore > 0 {
-		food += int(float64(c.species.Herbivore) * 3 * (1 - c.position.Y/float64(e.height)))
+		food += int(float64(c.species.Herbivore) * e.getLightOnHeight(c.position.Y, iteration))
 	}
 	if c.species.Funghi > 0 {
 		food += int(c.species.getProcessedWaste(e.getToxicityOnHeight(c.position.Y)))
@@ -98,11 +97,7 @@ func (c *Cell) procreate(
 			descendant.procreatedAt = iteration
 			descendant.alive = true
 
-			angle := rand.Float64() * 2 * 3.14
-			vec := (r2.Point{
-				X: math.Cos(angle),
-				Y: math.Sin(angle),
-			}).Mul(float64(c.species.size))
+			vec := getRandomVec().Mul(float64(c.species.size))
 
 			descendant.position = c.position.Add(vec)
 			c.position = c.position.Sub(vec)
@@ -127,11 +122,18 @@ func (c *Cell) procreate(
 }
 
 func (c *Cell) move() {
-	moveVec := c.
-		target.
-		Sub(c.position).
-		Normalize().
-		Mul(float64(c.species.mobility / c.species.getMass()))
+	var moveVec r2.Point
+
+	if c.action == idle {
+		moveVec = getRandomVec()
+	} else {
+		moveVec = c.
+			target.
+			Sub(c.position).
+			Normalize()
+	}
+
+	moveVec = moveVec.Mul(float64(c.species.mobility / c.species.getMass()))
 	c.position = c.position.Add(moveVec)
 }
 
@@ -165,7 +167,7 @@ func (c *Cell) sim(
 	descendants := []Cell{}
 
 	if c.alive {
-		c.eat(env)
+		c.eat(env, iteration)
 		c.move()
 		descendants = c.procreate(canProcreate, iteration, lastID, env, addSpecies)
 		if c.shouldDie(env, iteration) {
