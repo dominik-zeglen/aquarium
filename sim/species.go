@@ -12,6 +12,7 @@ type Species struct {
 	Count     int  `json:"count"`
 
 	shape string
+	diets []Diet
 
 	size int
 
@@ -168,7 +169,30 @@ func (s Species) mutate() Species {
 	st := s
 
 	if rand.Float32() > .99 {
-		mutationCount := (rand.Intn(40) + 1)
+		if len(st.diets) == 1 {
+			if st.hasDiet(Herbivore) {
+				st.diets = append(st.diets, Funghi)
+				st.Herbivore /= 2
+				st.Funghi = st.Herbivore
+			}
+			if st.hasDiet(Funghi) {
+				st.diets = append(st.diets, Herbivore)
+				st.Funghi /= 2
+				st.Herbivore = st.Funghi
+			}
+		} else {
+			diets := []Diet{Herbivore, Funghi}
+			diet := diets[rand.Intn(len(diets))]
+			if diet == Herbivore {
+				st.Herbivore += st.Funghi
+				st.Funghi = 0
+			} else if diet == Funghi {
+				st.Funghi += st.Herbivore
+				st.Herbivore = 0
+			}
+		}
+
+		mutationCount := (rand.Intn(10) + 10)
 		for i := 0; i < mutationCount; i++ {
 			st = st.mutateOnce()
 		}
@@ -195,12 +219,21 @@ func (s Species) mutateOnce() Species {
 			attr = rand.Float64()
 		}
 
-		if attr < .07 {
-			n.Carnivore += int8(value * 4)
-		} else if attr < .14 {
-			n.Herbivore += int8(value * 4)
-		} else if attr < .21 {
-			n.Funghi += int8(value * 4)
+		if attr < .21 {
+			if len(s.diets) > 1 {
+				if rand.Float32() > .5 {
+					n.Herbivore += int8(value * 4)
+				} else {
+					n.Funghi += int8(value * 4)
+				}
+			} else {
+				if s.hasDiet(Herbivore) {
+					n.Herbivore += int8(value * 4)
+				}
+				if s.hasDiet(Funghi) {
+					n.Funghi += int8(value * 4)
+				}
+			}
 		}
 
 		if attr > .21 && attr > .41 {
@@ -239,6 +272,7 @@ func (s Species) mutateOnce() Species {
 
 func getRandomHerbivore() Species {
 	s := Species{}
+	s.diets = []Diet{Herbivore}
 
 	s.maxCapacity = rand.Intn(30)
 
@@ -263,6 +297,7 @@ func getRandomHerbivore() Species {
 
 func getRandomFunghi() Species {
 	s := getRandomHerbivore()
+	s.diets = []Diet{Funghi}
 	s.Funghi = s.Herbivore
 	s.Herbivore = 0
 	s.maxSatiation -= 50
