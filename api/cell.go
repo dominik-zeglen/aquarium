@@ -30,6 +30,10 @@ func (res CellResolver) Capacity() int32 {
 	return int32(res.cell.GetCapacity())
 }
 
+func (res CellResolver) Food() int32 {
+	return int32(res.cell.GetFood(res.s.GetEnvironment(), res.s.GetIteration()))
+}
+
 func (res CellResolver) Hp() int32 {
 	return int32(res.cell.GetHP())
 }
@@ -40,6 +44,10 @@ func (res CellResolver) Position() r2.Point {
 
 func (res CellResolver) Satiation() int32 {
 	return int32(res.cell.GetSatiation())
+}
+
+func (res CellResolver) Species() SpeciesResolver {
+	return CreateSpeciesResolver(res.cell.GetSpecies(), res.s)
 }
 
 type CellConnectionEdgeResolver struct {

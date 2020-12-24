@@ -37,7 +37,15 @@ type SimData struct {
 	Procreation    ProcreationData `json:"procreation"`
 }
 
-const maxCells = 3e4
+const maxCells = 5e4
+
+func (s Sim) GetEnvironment() Environment {
+	return s.env
+}
+
+func (s Sim) GetIteration() int {
+	return s.iteration
+}
 
 func (s *Sim) RunStep() SimData {
 	s.iteration++

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"time"
 
 	"github.com/dominik-zeglen/aquarium/api"
 	"github.com/dominik-zeglen/aquarium/sim"
@@ -54,9 +53,9 @@ func main() {
 		// 	break
 		// }
 
-		if true {
-			time.Sleep(time.Second * 80)
-		}
+		// if true {
+		// 	time.Sleep(time.Second / 8)
+		// }
 	}
 
 	defer save(data)

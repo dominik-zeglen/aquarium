@@ -41,7 +41,7 @@ type Species struct {
 	reproducingMethod bool
 }
 
-func (s Species) getName() string {
+func (s Species) GetName() string {
 	diet := "F"
 	if s.Herbivore > s.Funghi {
 		diet = "H"
@@ -83,7 +83,7 @@ func (s Species) getProcessedWaste(toxicity float64) float64 {
 func (s Species) getWaste(toxicity float64) float64 {
 	waste := float64(s.size)
 	if (toxicity) > 0 {
-		waste -= s.getProcessedWaste(toxicity)
+		waste -= s.getProcessedWaste(toxicity) / 2
 	}
 
 	return waste / 6e8
@@ -93,8 +93,16 @@ func (c Species) getWasteAfterDeath() float64 {
 	return (float64(c.size)) / 6e8
 }
 
-func (c Species) getConsumption() int {
-	return int(float32(c.maxSatiation) / 20 * float32(c.size) / 30)
+func (c Species) GetConsumption() int {
+	return int(
+		float32(c.maxSatiation) / 20 *
+			float32(c.size) / 30 *
+			float32(c.consumption) / 10,
+	)
+}
+
+func (s Species) GetDiet() []Diet {
+	return s.diets
 }
 
 func (s *Species) validate() bool {
@@ -252,11 +260,11 @@ func (s Species) mutateOnce() Species {
 			n.procreationCd += int8(value)
 		}
 
-		if attr > .73 && attr < .88 {
+		if attr > .73 && attr < .9 {
 			n.WasteTolerance += float64(value) / 4
 		}
 
-		if attr > .88 && attr < .95 {
+		if attr > .9 && attr < .95 {
 			n.maxSatiation += value
 		}
 
@@ -289,19 +297,8 @@ func getRandomHerbivore() Species {
 	s.consumption = 10
 	s.procreationCd = int8(rand.Intn(4) + 8)
 
-	s.WasteTolerance = float64(rand.Intn(16))/4 + 1
+	s.WasteTolerance = float64(rand.Intn(16))/4 + 3
 	s.mobility = 20
-
-	return s
-}
-
-func getRandomFunghi() Species {
-	s := getRandomHerbivore()
-	s.diets = []Diet{Funghi}
-	s.Funghi = s.Herbivore
-	s.Herbivore = 0
-	s.maxSatiation -= 50
-	s.TimeToDie += 5
 
 	return s
 }

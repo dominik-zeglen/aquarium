@@ -3,7 +3,6 @@ package sim
 import (
 	"math/rand"
 
-	gauss "github.com/chobie/go-gaussian"
 	"github.com/golang/geo/r2"
 )
 
@@ -25,6 +24,18 @@ type Cell struct {
 	capacity  int
 }
 
+func (c Cell) GetFood(e Environment, iteration int) int {
+	food := 0
+	if c.species.Herbivore > 0 {
+		food += int(float64(c.species.Herbivore) * e.getLightOnHeight(c.position.Y, iteration))
+	}
+	if c.species.Funghi > 0 {
+		food += int(c.species.getProcessedWaste(e.getToxicityOnHeight(c.position.Y)))
+	}
+
+	return food
+}
+
 func (c Cell) getLeftToFull() int {
 	return c.species.maxSatiation - c.satiation
 }
@@ -34,14 +45,8 @@ func (c Cell) shouldEat() bool {
 }
 
 func (c *Cell) eat(e Environment, iteration int) {
-	c.satiation -= c.species.getConsumption()
-	food := 0
-	if c.species.Herbivore > 0 {
-		food += int(float64(c.species.Herbivore) * e.getLightOnHeight(c.position.Y, iteration))
-	}
-	if c.species.Funghi > 0 {
-		food += int(c.species.getProcessedWaste(e.getToxicityOnHeight(c.position.Y)))
-	}
+	c.satiation -= c.species.GetConsumption()
+	food := c.GetFood(e, iteration)
 
 	if food > c.getLeftToFull() {
 		c.satiation = c.species.maxSatiation
@@ -138,23 +143,27 @@ func (c *Cell) move() {
 }
 
 func (c Cell) shouldDie(env Environment, iteration int) bool {
-	if c.satiation == 0 || isOutOfBounds(c.position, env) {
+	age := iteration - c.bornAt
+	isStarving := c.satiation == 0
+	isPastLifetime := c.species.TimeToDie < age
+	isEnvironmentTooToxic := env.getToxicityOnHeight(c.position.Y) > c.species.WasteTolerance
+
+	mustDie := isPastLifetime ||
+		isEnvironmentTooToxic ||
+		c.hp == 0 ||
+		isOutOfBounds(c.position, env)
+
+	if mustDie {
 		return true
 	}
 
-	var prob float64
-	if env.toxicity > c.species.WasteTolerance {
-		prob = rand.Float64() + (env.getToxicityOnHeight(c.position.Y) - c.species.WasteTolerance)
-	}
-	if c.bornAt+c.species.TimeToDie-iteration < 0 {
-		p := gauss.NewGaussian(float64(c.species.TimeToDie), 10)
-		prob += p.Cdf(float64(iteration - c.bornAt))
+	if isStarving {
+		if age > 0 {
+			return true
+		}
 	}
 
-	roll := rand.Float64()
-	result := prob > roll
-
-	return result
+	return false
 }
 
 func (c *Cell) sim(
@@ -207,13 +216,7 @@ func (c Cell) GetCapacity() int {
 
 func getRandomCell(id int, e Environment, addSpecies AddSpecies) Cell {
 	var c Cell
-	var s Species
-
-	if rand.Float32() > .5 {
-		s = getRandomHerbivore()
-	} else {
-		s = getRandomFunghi()
-	}
+	s := getRandomHerbivore()
 
 	c.species = addSpecies(s)
 
@@ -222,8 +225,8 @@ func getRandomCell(id int, e Environment, addSpecies AddSpecies) Cell {
 	c.alive = true
 	c.satiation = 20
 	c.position = r2.Point{
-		float64(e.width) * rand.Float64(),
-		float64(e.height) * rand.Float64(),
+		X: float64(e.width) * rand.Float64(),
+		Y: float64(e.height) * rand.Float64(),
 	}
 
 	return c

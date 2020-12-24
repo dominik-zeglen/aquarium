@@ -19,10 +19,14 @@ type SpeciesConnectionEdge {
 
 type Species {
   id: Int!
-  name: String!
-  emergedAt: Int!
-  diet: [String!]!
+  carnivore: Int!
   cells: [Cell!]!
+  consumption: Int!
+  diet: [String!]!
+  emergedAt: Int!
+  funghi: Int!
+  herbivore: Int!
+  name: String!
 }
 
 type CellConnection {
@@ -39,10 +43,11 @@ type Cell {
   alive: Boolean!
   bornAt: Int!
   capacity: Int!
+  food: Int!
   hp: Int!
   position: Point!
   satiation: Int!
-  # species: Species!
+  species: Species!
 }
 
 type Query {
