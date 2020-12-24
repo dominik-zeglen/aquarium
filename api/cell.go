@@ -41,3 +41,39 @@ func (res CellResolver) Position() r2.Point {
 func (res CellResolver) Satiation() int32 {
 	return int32(res.cell.GetSatiation())
 }
+
+type CellConnectionEdgeResolver struct {
+	cell sim.Cell
+	s    *sim.Sim
+}
+
+func CreateCellConnectionEdgeResolver(cell sim.Cell, sim *sim.Sim) CellConnectionEdgeResolver {
+	return CellConnectionEdgeResolver{cell, sim}
+}
+
+func (res CellConnectionEdgeResolver) Node() CellResolver {
+	return CreateCellResolver(&res.cell, res.s)
+}
+
+type CellConnectionResolver struct {
+	cells []sim.Cell
+	s     *sim.Sim
+}
+
+func CreateCellConnectionResolver(cells []sim.Cell, sim *sim.Sim) CellConnectionResolver {
+	return CellConnectionResolver{cells, sim}
+}
+
+func (res CellConnectionResolver) Count() int32 {
+	return int32(len(res.cells))
+}
+
+func (res CellConnectionResolver) Edges() []CellConnectionEdgeResolver {
+	resolvers := make([]CellConnectionEdgeResolver, len(res.cells))
+
+	for cellIndex := range res.cells {
+		resolvers[cellIndex] = CreateCellConnectionEdgeResolver(res.cells[cellIndex], res.s)
+	}
+
+	return resolvers
+}

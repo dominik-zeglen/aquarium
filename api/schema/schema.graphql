@@ -14,7 +14,7 @@ type SpeciesConnection {
 }
 
 type SpeciesConnectionEdge {
-  node: [Species!]!
+  node: Species!
 }
 
 type Species {
@@ -31,7 +31,7 @@ type CellConnection {
 }
 
 type CellConnectionEdge {
-  node: [Cell!]!
+  node: Cell!
 }
 
 type Cell {
@@ -50,7 +50,7 @@ type Query {
   cell(id: Int!): Cell
   # species(id:Int!):Species
 
-  # cellList: CellConnection!
+  cellList: CellConnection!
   # speciesList: SpeciesConnection!
 }
 

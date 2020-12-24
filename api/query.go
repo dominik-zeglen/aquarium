@@ -25,3 +25,9 @@ func (q *Query) Cell(args CellArgs) *CellResolver {
 
 	return nil
 }
+
+func (q *Query) CellList() CellConnectionResolver {
+	cells := q.s.GetCells()
+
+	return CreateCellConnectionResolver(cells, q.s)
+}
