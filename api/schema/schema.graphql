@@ -46,7 +46,7 @@ type Cell {
 }
 
 type Query {
-  # area(start: PointInput!, end: PointInput!): [Cell!]!
+  area(start: PointInput!, end: PointInput!): [Cell!]!
   cell(id: Int!): Cell
   # species(id:Int!):Species
 
