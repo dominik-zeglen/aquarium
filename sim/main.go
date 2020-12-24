@@ -222,3 +222,7 @@ func (s *Sim) Create() {
 
 	s.cells = startCells
 }
+
+func (s *Sim) GetCells() []Cell {
+	return s.cells
+}

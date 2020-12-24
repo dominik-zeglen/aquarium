@@ -1,0 +1,59 @@
+input PointInput {
+  x: Float!
+  y: Float!
+}
+
+type Point {
+  x: Float!
+  y: Float!
+}
+
+type SpeciesConnection {
+  count: Int!
+  edges: [SpeciesConnectionEdge!]!
+}
+
+type SpeciesConnectionEdge {
+  node: [Species!]!
+}
+
+type Species {
+  id: Int!
+  name: String!
+  emergedAt: Int!
+  diet: [String!]!
+  cells: [Cell!]!
+}
+
+type CellConnection {
+  count: Int!
+  edges: [CellConnectionEdge!]!
+}
+
+type CellConnectionEdge {
+  node: [Cell!]!
+}
+
+type Cell {
+  id: Int!
+  alive: Boolean!
+  bornAt: Int!
+  capacity: Int!
+  hp: Int!
+  position: Point!
+  satiation: Int!
+  # species: Species!
+}
+
+type Query {
+  # area(start: PointInput!, end: PointInput!): [Cell!]!
+  cell(id: Int!): Cell
+  # species(id:Int!):Species
+
+  # cellList: CellConnection!
+  # speciesList: SpeciesConnection!
+}
+
+schema {
+  query: Query
+}

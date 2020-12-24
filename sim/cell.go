@@ -179,6 +179,32 @@ func (c *Cell) sim(
 	return descendants
 }
 
+// Getters
+func (c Cell) GetID() int {
+	return c.id
+}
+func (c Cell) GetPosition() r2.Point {
+	return c.position
+}
+func (c Cell) GetSpecies() *Species {
+	return c.species
+}
+func (c Cell) IsAlive() bool {
+	return c.alive
+}
+func (c Cell) GetHP() int {
+	return c.hp
+}
+func (c Cell) GetBornAt() int {
+	return c.bornAt
+}
+func (c Cell) GetSatiation() int {
+	return c.satiation
+}
+func (c Cell) GetCapacity() int {
+	return c.capacity
+}
+
 func getRandomCell(id int, e Environment, addSpecies AddSpecies) Cell {
 	var c Cell
 	var s Species

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/dominik-zeglen/aquarium/api"
 	"github.com/dominik-zeglen/aquarium/sim"
 )
 
@@ -27,6 +28,7 @@ func main() {
 		d, _ := json.Marshal(data[len(data)-1])
 		res.Write(d)
 	})
+	http.Handle("/api", api.InitAPI(&s))
 	go http.ListenAndServe(":8000", nil)
 
 	consecutiveNoProcreateIterations := 0
@@ -52,8 +54,8 @@ func main() {
 		// 	break
 		// }
 
-		if false {
-			time.Sleep(time.Second / 8)
+		if true {
+			time.Sleep(time.Second * 80)
 		}
 	}
 
