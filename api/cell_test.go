@@ -2,12 +2,14 @@ package api
 
 import (
 	"context"
+	"log"
 	"testing"
 
 	"github.com/dominik-zeglen/aquarium/sim"
 )
 
 func TestCellResolver(t *testing.T) {
+	// Given
 	s := sim.Sim{}
 	s.Create()
 	schema, err := GetSchema(&s)
@@ -15,9 +17,10 @@ func TestCellResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// When
 	variables := map[string]interface{}{}
 
-	schema.Exec(
+	res := schema.Exec(
 		context.TODO(),
 		`query GetCell {
 			cell(id: 1) {
@@ -26,7 +29,10 @@ func TestCellResolver(t *testing.T) {
 				bornAt
 				capacity
 				hp
-				position
+				position {
+					x
+					y
+				}
 				satiation
 				# species
 			}
@@ -34,9 +40,15 @@ func TestCellResolver(t *testing.T) {
 		"GetCell",
 		variables,
 	)
+
+	// Then
+	if len(res.Errors) > 0 {
+		log.Fatal(res.Errors)
+	}
 }
 
 func TestCellListResolver(t *testing.T) {
+	// Given
 	s := sim.Sim{}
 	s.Create()
 	schema, err := GetSchema(&s)
@@ -44,9 +56,10 @@ func TestCellListResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// When
 	variables := map[string]interface{}{}
 
-	schema.Exec(
+	res := schema.Exec(
 		context.TODO(),
 		`query GetCells {
 			cellList {
@@ -54,13 +67,6 @@ func TestCellListResolver(t *testing.T) {
 				edges {
 					node {
 						id
-						alive
-						bornAt
-						capacity
-						hp
-						position
-						satiation
-						# species
 					}
 				}
 			}
@@ -68,4 +74,50 @@ func TestCellListResolver(t *testing.T) {
 		"GetCells",
 		variables,
 	)
+
+	// Then
+	if len(res.Errors) > 0 {
+		log.Fatal(res.Errors)
+	}
+}
+
+func TestAreaResolver(t *testing.T) {
+	// Given
+	s := sim.Sim{}
+	s.Create()
+	schema, err := GetSchema(&s)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// When
+	variables, err := unmarshallVariables(`{
+		"start": {
+			"x": 0,
+			"y": 0
+		},
+		"end": {
+			"x": 0,
+			"y": 6000
+		}
+	}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res := schema.Exec(
+		context.TODO(),
+		`query GetArea($start: PointInput!, $end: PointInput!) {
+			area(start: $start, end: $end) {
+				id
+			}
+		}`,
+		"GetArea",
+		variables,
+	)
+
+	// Then
+	if len(res.Errors) > 0 {
+		log.Fatal(res.Errors)
+	}
 }
