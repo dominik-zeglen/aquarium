@@ -17,7 +17,7 @@ func TestEating(t *testing.T) {
 			satiation: satiation,
 		}
 
-		c.eat(e)
+		c.eat(e, 0)
 
 		if c.satiation < satiation {
 			t.Errorf(
@@ -40,7 +40,7 @@ func TestEating(t *testing.T) {
 			satiation: satiation,
 		}
 
-		c.eat(e)
+		c.eat(e, 0)
 
 		if c.satiation < satiation {
 			t.Errorf(
@@ -63,7 +63,7 @@ func TestEating(t *testing.T) {
 			satiation: satiation,
 		}
 
-		c.eat(e)
+		c.eat(e, 0)
 
 		if c.satiation > satiation {
 			t.Errorf(

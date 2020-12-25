@@ -19,31 +19,5 @@ func main() {
 	))
 	go http.ListenAndServe(":8000", nil)
 
-	consecutiveNoProcreateIterations := 0
-
-	for {
-		if s.GetCellCount() == 0 {
-			break
-		}
-		iterationData := s.RunStep()
-		data = iterationData
-
-		if !iterationData.Procreation.CanProcreate {
-			consecutiveNoProcreateIterations++
-		} else {
-			consecutiveNoProcreateIterations = 0
-		}
-
-		if consecutiveNoProcreateIterations > 2 {
-			s.KillOldestCells()
-		}
-
-		// if iterationData.Iteration == 1 {
-		// 	break
-		// }
-
-		// if true {
-		// 	time.Sleep(time.Second / 8)
-		// }
-	}
+	s.RunLoop(&data)
 }

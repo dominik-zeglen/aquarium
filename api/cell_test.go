@@ -12,7 +12,8 @@ func TestCellResolver(t *testing.T) {
 	// Given
 	s := sim.Sim{}
 	s.Create()
-	schema, err := GetSchema(&s)
+	d := sim.IterationData{}
+	schema, err := GetSchema(&s, &d)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +52,8 @@ func TestCellListResolver(t *testing.T) {
 	// Given
 	s := sim.Sim{}
 	s.Create()
-	schema, err := GetSchema(&s)
+	d := sim.IterationData{}
+	schema, err := GetSchema(&s, &d)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +87,8 @@ func TestAreaResolver(t *testing.T) {
 	// Given
 	s := sim.Sim{}
 	s.Create()
-	schema, err := GetSchema(&s)
+	d := sim.IterationData{}
+	schema, err := GetSchema(&s, &d)
 	if err != nil {
 		t.Fatal(err)
 	}

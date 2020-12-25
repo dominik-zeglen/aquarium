@@ -140,6 +140,38 @@ func (s *Sim) RunStep() IterationData {
 	return data
 }
 
+func (s *Sim) RunLoop(data *IterationData) {
+	consecutiveNoProcreateIterations := 0
+
+	for {
+		iterationData := s.RunStep()
+		data = &iterationData
+
+		if !iterationData.Procreation.CanProcreate {
+			consecutiveNoProcreateIterations++
+		} else {
+			consecutiveNoProcreateIterations = 0
+		}
+
+		if consecutiveNoProcreateIterations > 2 {
+			s.KillOldestCells()
+		}
+
+		if s.GetCellCount() == 0 {
+			break
+		}
+
+		// if iterationData.Iteration == 1 {
+		// 	break
+		// }
+
+		// if true {
+		// 	time.Sleep(time.Second / 8)
+		// }
+
+	}
+}
+
 func (s Sim) getAliveCells() int {
 	counter := 0
 
