@@ -47,17 +47,17 @@ func (res SpeciesResolver) Herbivore() int32 {
 func (res SpeciesResolver) Funghi() int32 {
 	return int32(res.species.Funghi)
 }
-func (res SpeciesResolver) Cells() []CellResolver {
-	var resolvers []CellResolver
+func (res SpeciesResolver) Cells() CellConnectionResolver {
+	cells := make([]sim.Cell, res.species.Count)
 	simCells := res.s.GetCells()
-
-	for _, cell := range simCells {
-		if cell.GetSpecies().ID == res.species.ID {
-			resolvers = append(resolvers, CreateCellResolver(&cell, res.s))
+	index := 0
+	for cellIndex := range simCells {
+		if simCells[cellIndex].GetSpecies().ID == res.species.ID {
+			cells[index] = simCells[cellIndex]
 		}
 	}
 
-	return resolvers
+	return CreateCellConnectionResolver(cells, res.s)
 }
 
 type SpeciesConnectionEdgeResolver struct {

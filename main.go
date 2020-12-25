@@ -1,10 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/dominik-zeglen/aquarium/api"
+	"github.com/dominik-zeglen/aquarium/middleware"
 	"github.com/dominik-zeglen/aquarium/sim"
 )
 
@@ -13,14 +13,10 @@ func main() {
 	s.Create()
 
 	var data sim.IterationData
-
-	http.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
-		res.Header().Add("content-type", "application/json")
-		res.Header().Add("Access-Control-Allow-Origin", "*")
-		d, _ := json.Marshal(data)
-		res.Write(d)
-	})
-	http.Handle("/api", api.InitAPI(&s, &data))
+	http.Handle("/api", middleware.WithCors(
+		[]string{"http://localhost:3000"},
+		api.InitAPI(&s, &data),
+	))
 	go http.ListenAndServe(":8000", nil)
 
 	consecutiveNoProcreateIterations := 0

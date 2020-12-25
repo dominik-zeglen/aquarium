@@ -43,7 +43,7 @@ type SpeciesConnectionEdge {
 type Species {
   id: Int!
   carnivore: Int!
-  cells: [Cell!]!
+  cells: CellConnection!
   consumption: Int!
   diet: [String!]!
   emergedAt: Int!
