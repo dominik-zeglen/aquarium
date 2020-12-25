@@ -12,6 +12,8 @@ type Sim struct {
 	env           Environment
 	speciesLastID int
 	iteration     int
+	maxCells      int
+	verbose       bool
 }
 
 type WasteData struct {
@@ -37,7 +39,13 @@ type IterationData struct {
 	Procreation    ProcreationData `json:"procreation"`
 }
 
-const maxCells = 2e4
+func (d *IterationData) from(from IterationData) {
+	d.AliveCellCount = from.AliveCellCount
+	d.CellCount = from.CellCount
+	d.Iteration = from.Iteration
+	d.Procreation = from.Procreation
+	d.Waste = from.Waste
+}
 
 func (s Sim) GetEnvironment() Environment {
 	return s.env
@@ -67,7 +75,7 @@ func (s *Sim) RunStep() IterationData {
 		},
 	}
 
-	data.Procreation.CanProcreate = data.AliveCellCount < maxCells
+	data.Procreation.CanProcreate = data.AliveCellCount < s.maxCells
 
 	for cellIndex, cell := range s.cells {
 		if cell.alive {
@@ -121,20 +129,22 @@ func (s *Sim) RunStep() IterationData {
 	s.cleanupSpecies()
 	data.Procreation.Species = s.species
 
-	fmt.Printf(
-		"Iteration %6d, cell count: %5d, alive cells: %5d, waste: %.4f, tolerance: %.2f-%.2f, %3d species",
-		s.iteration,
-		len(s.cells),
-		s.getAliveCells(),
-		s.env.toxicity,
-		data.Waste.MinTolerance,
-		data.Waste.MaxTolerance,
-		len(s.GetAliveSpecies()),
-	)
-	if data.Procreation.CanProcreate {
-		fmt.Printf("\n")
-	} else {
-		fmt.Print(" x\n")
+	if s.verbose {
+		fmt.Printf(
+			"Iteration %6d, cell count: %5d, alive cells: %5d, waste: %.4f, tolerance: %.2f-%.2f, %3d species",
+			s.iteration,
+			len(s.cells),
+			s.getAliveCells(),
+			s.env.toxicity,
+			data.Waste.MinTolerance,
+			data.Waste.MaxTolerance,
+			len(s.GetAliveSpecies()),
+		)
+		if data.Procreation.CanProcreate {
+			fmt.Printf("\n")
+		} else {
+			fmt.Print(" x\n")
+		}
 	}
 
 	return data
@@ -145,7 +155,7 @@ func (s *Sim) RunLoop(data *IterationData) {
 
 	for {
 		iterationData := s.RunStep()
-		data = &iterationData
+		data.from(iterationData)
 
 		if !iterationData.Procreation.CanProcreate {
 			consecutiveNoProcreateIterations++
@@ -241,7 +251,7 @@ func (s Sim) GetCellCount() int {
 }
 
 func (s *Sim) KillOldestCells() {
-	for i := 2; s.getAliveCells() >= maxCells; i++ {
+	for i := 2; s.getAliveCells() >= s.maxCells; i++ {
 		for cellIndex := range s.cells {
 			if s.cells[cellIndex].species.TimeToDie+s.cells[cellIndex].bornAt-s.iteration < i {
 				s.cells[cellIndex].alive = false
@@ -250,7 +260,7 @@ func (s *Sim) KillOldestCells() {
 	}
 }
 
-func (s *Sim) Create() {
+func (s *Sim) Create(verbose bool) {
 	s.iteration = 0
 	s.env = Environment{4, 10000, 10000}
 
@@ -261,6 +271,8 @@ func (s *Sim) Create() {
 	}
 
 	s.cells = startCells
+	s.maxCells = 10e4
+	s.verbose = verbose
 }
 
 func (s *Sim) GetCells() []Cell {
