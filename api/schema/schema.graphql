@@ -8,6 +8,29 @@ type Point {
   y: Float!
 }
 
+type IterationProcreation {
+  canProcreate: Boolean!
+  maxCd: Int!
+  maxHeight: Float!
+  minCd: Int!
+  minHeight: Float!
+  species: SpeciesConnection!
+}
+
+type IterationWaste {
+  maxTolerance: Float!
+  minTolerance: Float!
+  toxicity: Float!
+}
+
+type Iteration {
+  aliveCellCount: Int!
+  cellCount: Int!
+  number: Int!
+  procreation: IterationProcreation!
+  waste: IterationWaste!
+}
+
 type SpeciesConnection {
   count: Int!
   edges: [SpeciesConnectionEdge!]!
@@ -52,11 +75,14 @@ type Cell {
 
 type Query {
   area(start: PointInput!, end: PointInput!): [Cell!]!
-  cell(id: Int!): Cell
-  # species(id:Int!):Species
 
+  cell(id: Int!): Cell
   cellList: CellConnection!
-  # speciesList: SpeciesConnection!
+
+  species(id: Int!): Species
+  speciesList: SpeciesConnection!
+
+  iteration: Iteration!
 }
 
 schema {

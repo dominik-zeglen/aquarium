@@ -21,20 +21,20 @@ func GetSchemaStr() (*string, error) {
 	return &schemaStr, nil
 }
 
-func GetSchema(sim *sim.Sim) (*graphql.Schema, error) {
+func GetSchema(sim *sim.Sim, iteration *sim.IterationData) (*graphql.Schema, error) {
 	schemaStr, err := GetSchemaStr()
 	if err != nil {
 		return nil, err
 	}
 
 	opts := []graphql.SchemaOpt{graphql.UseFieldResolvers()}
-	schema := graphql.MustParseSchema(*schemaStr, &Query{sim}, opts...)
+	schema := graphql.MustParseSchema(*schemaStr, &Query{sim, iteration}, opts...)
 
 	return schema, nil
 }
 
-func InitAPI(sim *sim.Sim) *relay.Handler {
-	schema, err := GetSchema(sim)
+func InitAPI(sim *sim.Sim, iteration *sim.IterationData) *relay.Handler {
+	schema, err := GetSchema(sim, iteration)
 	if err != nil {
 		log.Fatal(err)
 	}

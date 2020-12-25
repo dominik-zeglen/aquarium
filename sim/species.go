@@ -83,7 +83,7 @@ func (s Species) getProcessedWaste(toxicity float64) float64 {
 func (s Species) getWaste(toxicity float64) float64 {
 	waste := float64(s.size)
 	if (toxicity) > 0 {
-		waste -= s.getProcessedWaste(toxicity) / 2
+		waste -= s.getProcessedWaste(toxicity)
 	}
 
 	return waste / 6e8
@@ -176,7 +176,7 @@ func (s Species) getDietPoints() int {
 func (s Species) mutate() Species {
 	st := s
 
-	if rand.Float32() > .99 {
+	if rand.Float32() > .98 {
 		if len(st.diets) == 1 {
 			if st.hasDiet(Herbivore) {
 				st.diets = append(st.diets, Funghi)

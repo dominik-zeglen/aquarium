@@ -59,3 +59,39 @@ func (res SpeciesResolver) Cells() []CellResolver {
 
 	return resolvers
 }
+
+type SpeciesConnectionEdgeResolver struct {
+	species sim.Species
+	s       *sim.Sim
+}
+
+func CreateSpeciesConnectionEdgeResolver(species sim.Species, sim *sim.Sim) SpeciesConnectionEdgeResolver {
+	return SpeciesConnectionEdgeResolver{species, sim}
+}
+
+func (res SpeciesConnectionEdgeResolver) Node() SpeciesResolver {
+	return CreateSpeciesResolver(&res.species, res.s)
+}
+
+type SpeciesConnectionResolver struct {
+	species []sim.Species
+	s       *sim.Sim
+}
+
+func CreateSpeciesConnectionResolver(species []sim.Species, sim *sim.Sim) SpeciesConnectionResolver {
+	return SpeciesConnectionResolver{species, sim}
+}
+
+func (res SpeciesConnectionResolver) Count() int32 {
+	return int32(len(res.species))
+}
+
+func (res SpeciesConnectionResolver) Edges() []SpeciesConnectionEdgeResolver {
+	resolvers := make([]SpeciesConnectionEdgeResolver, len(res.species))
+
+	for speciesIndex := range res.species {
+		resolvers[speciesIndex] = CreateSpeciesConnectionEdgeResolver(res.species[speciesIndex], res.s)
+	}
+
+	return resolvers
+}

@@ -2,32 +2,25 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/dominik-zeglen/aquarium/api"
 	"github.com/dominik-zeglen/aquarium/sim"
 )
 
-func save(data []sim.SimData) {
-	file, _ := json.Marshal(data)
-
-	_ = ioutil.WriteFile("out/data.json", file, 0644)
-}
-
 func main() {
 	s := sim.Sim{}
 	s.Create()
 
-	data := []sim.SimData{}
+	var data sim.IterationData
 
 	http.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Add("content-type", "application/json")
 		res.Header().Add("Access-Control-Allow-Origin", "*")
-		d, _ := json.Marshal(data[len(data)-1])
+		d, _ := json.Marshal(data)
 		res.Write(d)
 	})
-	http.Handle("/api", api.InitAPI(&s))
+	http.Handle("/api", api.InitAPI(&s, &data))
 	go http.ListenAndServe(":8000", nil)
 
 	consecutiveNoProcreateIterations := 0
@@ -37,7 +30,7 @@ func main() {
 			break
 		}
 		iterationData := s.RunStep()
-		data = append(data, iterationData)
+		data = iterationData
 
 		if !iterationData.Procreation.CanProcreate {
 			consecutiveNoProcreateIterations++
@@ -57,6 +50,4 @@ func main() {
 		// 	time.Sleep(time.Second / 8)
 		// }
 	}
-
-	defer save(data)
 }

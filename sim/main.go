@@ -29,7 +29,7 @@ type ProcreationData struct {
 	Species      []Species `json:"species"`
 }
 
-type SimData struct {
+type IterationData struct {
 	CellCount      int             `json:"cellCount"`
 	AliveCellCount int             `json:"aliveCellCount"`
 	Waste          WasteData       `json:"waste"`
@@ -47,13 +47,13 @@ func (s Sim) GetIteration() int {
 	return s.iteration
 }
 
-func (s *Sim) RunStep() SimData {
+func (s *Sim) RunStep() IterationData {
 	s.iteration++
 
 	nextGenCells := []Cell{}
 	waste := float64(0)
 
-	data := SimData{
+	data := IterationData{
 		CellCount:      len(s.cells),
 		AliveCellCount: s.getAliveCells(),
 		Iteration:      s.iteration,
@@ -129,7 +129,7 @@ func (s *Sim) RunStep() SimData {
 		s.env.toxicity,
 		data.Waste.MinTolerance,
 		data.Waste.MaxTolerance,
-		s.GetAliveSpecies(),
+		len(s.GetAliveSpecies()),
 	)
 	if data.Procreation.CanProcreate {
 		fmt.Printf("\n")
@@ -193,15 +193,15 @@ func (s *Sim) cleanupSpecies() {
 	}
 }
 
-func (s Sim) GetAliveSpecies() int {
-	counter := 0
+func (s Sim) GetAliveSpecies() []Species {
+	species := []Species{}
 	for speciesIndex := range s.species {
 		if !s.species[speciesIndex].Extinct {
-			counter++
+			species = append(species, s.species[speciesIndex])
 		}
 	}
 
-	return counter
+	return species
 }
 
 func (s Sim) GetCellCount() int {

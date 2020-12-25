@@ -6,7 +6,8 @@ import (
 )
 
 type Query struct {
-	s *sim.Sim
+	s         *sim.Sim
+	iteration *sim.IterationData
 }
 
 type CellArgs struct {
@@ -33,6 +34,30 @@ func (q *Query) CellList() CellConnectionResolver {
 	return CreateCellConnectionResolver(cells, q.s)
 }
 
+type SpeciesArgs struct {
+	ID int32
+}
+
+func (q *Query) Species(args SpeciesArgs) *SpeciesResolver {
+	species := q.s.GetAliveSpecies()
+	id := int(args.ID)
+
+	for _, species := range species {
+		if species.ID == id {
+			resolver := CreateSpeciesResolver(&species, q.s)
+			return &resolver
+		}
+	}
+
+	return nil
+}
+
+func (q *Query) SpeciesList() SpeciesConnectionResolver {
+	species := q.s.GetAliveSpecies()
+
+	return CreateSpeciesConnectionResolver(species, q.s)
+}
+
 type AreaArgs struct {
 	Start r2.Point
 	End   r2.Point
@@ -51,4 +76,8 @@ func (q *Query) Area(args AreaArgs) []CellResolver {
 	}
 
 	return resolvers
+}
+
+func (q *Query) Iteration() IterationResolver {
+	return CreateIterationResolver(q.iteration, q.s)
 }
