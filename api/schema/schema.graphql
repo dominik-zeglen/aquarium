@@ -3,6 +3,16 @@ input PointInput {
   y: Float!
 }
 
+input AreaInput {
+  start: PointInput!
+  end: PointInput!
+  scale: Int
+}
+
+input CellFilter {
+  area: AreaInput
+}
+
 type Point {
   x: Float!
   y: Float!
@@ -73,14 +83,18 @@ type Cell {
   species: Species!
 }
 
-type Query {
-  area(start: PointInput!, end: PointInput!): [Cell!]!
+type SpeciesGridElement {
+  position: Point!
+  species: [Species!]!
+}
 
+type Query {
   cell(id: Int!): Cell
-  cellList: CellConnection!
+  cellList(filter: CellFilter): CellConnection!
 
   species(id: Int!): Species
   speciesList: SpeciesConnection!
+  speciesGrid(area: AreaInput!): [SpeciesGridElement!]!
 
   iteration: Iteration!
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/dominik-zeglen/aquarium/sim"
+	"github.com/golang/geo/r2"
 )
 
 type SpeciesResolver struct {
@@ -91,6 +92,30 @@ func (res SpeciesConnectionResolver) Edges() []SpeciesConnectionEdgeResolver {
 
 	for speciesIndex := range res.species {
 		resolvers[speciesIndex] = CreateSpeciesConnectionEdgeResolver(res.species[speciesIndex], res.s)
+	}
+
+	return resolvers
+}
+
+type SpeciesGridElementResolver struct {
+	Position r2.Point
+	species  []sim.Species
+	s        *sim.Sim
+}
+
+func CreateSpeciesGridElementResolver(
+	position r2.Point,
+	species []sim.Species,
+	sim *sim.Sim,
+) SpeciesGridElementResolver {
+	return SpeciesGridElementResolver{position, species, sim}
+}
+
+func (res SpeciesGridElementResolver) Species() []SpeciesResolver {
+	resolvers := make([]SpeciesResolver, len(res.species))
+
+	for speciesIndex := range res.species {
+		resolvers[speciesIndex] = CreateSpeciesResolver(&res.species[speciesIndex], res.s)
 	}
 
 	return resolvers

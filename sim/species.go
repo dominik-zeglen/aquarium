@@ -297,7 +297,7 @@ func getRandomHerbivore() Species {
 	s.consumption = 10
 	s.procreationCd = int8(rand.Intn(4) + 8)
 
-	s.WasteTolerance = float64(rand.Intn(16))/4 + 3
+	s.WasteTolerance = float64(rand.Intn(16))/4 + 4
 	s.mobility = 20
 
 	return s

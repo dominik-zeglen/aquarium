@@ -2,6 +2,8 @@ package sim
 
 import (
 	"fmt"
+
+	"github.com/golang/geo/r2"
 )
 
 type AddSpecies func(species Species) *Species
@@ -176,7 +178,7 @@ func (s *Sim) RunLoop(data *IterationData) {
 		// }
 
 		// if true {
-		// 	time.Sleep(time.Second / 8)
+		// 	time.Sleep(time.Second * 2)
 		// }
 
 	}
@@ -271,10 +273,66 @@ func (s *Sim) Create(verbose bool) {
 	}
 
 	s.cells = startCells
-	s.maxCells = 10e4
+	s.maxCells = 1e4
 	s.verbose = verbose
 }
 
 func (s *Sim) GetCells() []Cell {
 	return s.cells
+}
+
+func (s Sim) GetArea(start r2.Point, end r2.Point) []Cell {
+	simCells := s.GetCells()
+	cells := []Cell{}
+
+	for cellIndex, cell := range simCells {
+		position := cell.GetPosition()
+		if position.X > start.X && position.X < end.X &&
+			position.Y > start.Y && position.Y < end.Y {
+			cells = append(cells, simCells[cellIndex])
+		}
+	}
+
+	return cells
+}
+
+type GridRow = map[int][]Species
+type Grid = map[int]GridRow
+
+func (s Sim) GetSpeciesInArea(start r2.Point, end r2.Point, scale int) Grid {
+	cells := s.GetArea(start, end)
+
+	grid := Grid{}
+
+	for cellIndex := range cells {
+		x := int(cells[cellIndex].position.X) / scale
+		y := int(cells[cellIndex].position.Y) / scale
+		cellSpecies := *cells[cellIndex].species
+
+		_, ok := grid[y]
+		if !ok {
+			grid[y] = GridRow{}
+			grid[y][x] = []Species{cellSpecies}
+		} else {
+			species, ok := grid[y][x]
+			if !ok {
+				grid[y][x] = []Species{cellSpecies}
+			} else {
+				found := false
+				for speciesIndex := range species {
+					if species[speciesIndex].ID == cellSpecies.ID {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					grid[y][x] = append(species, cellSpecies)
+				}
+			}
+		}
+
+	}
+
+	return grid
 }

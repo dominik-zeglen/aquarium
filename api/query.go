@@ -26,10 +26,22 @@ func (q *Query) Cell(args CellArgs) *CellResolver {
 	}
 
 	return nil
+
 }
 
-func (q *Query) CellList() CellConnectionResolver {
-	cells := q.s.GetCells()
+type CellListArgs struct {
+	Filter *CellFilter
+}
+
+func (q *Query) CellList(args CellListArgs) CellConnectionResolver {
+	var cells []sim.Cell
+
+	if args.Filter != nil && args.Filter.Area != nil {
+		cells = q.s.GetArea(args.Filter.Area.Start, args.Filter.Area.End)
+	} else {
+
+		cells = q.s.GetCells()
+	}
 
 	return CreateCellConnectionResolver(cells, q.s)
 }
@@ -58,20 +70,26 @@ func (q *Query) SpeciesList() SpeciesConnectionResolver {
 	return CreateSpeciesConnectionResolver(species, q.s)
 }
 
-type AreaArgs struct {
-	Start r2.Point
-	End   r2.Point
+type SpeciesGridArgs struct {
+	Area AreaInput
 }
 
-func (q *Query) Area(args AreaArgs) []CellResolver {
-	cells := q.s.GetCells()
-	resolvers := []CellResolver{}
+func (q *Query) SpeciesGrid(args SpeciesGridArgs) []SpeciesGridElementResolver {
+	scale := int32(1)
+	if args.Area.Scale != nil {
+		scale = *args.Area.Scale
+	}
+	grid := q.s.GetSpeciesInArea(args.Area.Start, args.Area.End, int(scale))
 
-	for cellIndex, cell := range cells {
-		position := cell.GetPosition()
-		if position.X > args.Start.X && position.X < args.End.X &&
-			position.Y > args.Start.Y && position.Y < args.End.Y {
-			resolvers = append(resolvers, CreateCellResolver(&cells[cellIndex], q.s))
+	resolvers := []SpeciesGridElementResolver{}
+
+	for y := range grid {
+		for x := range grid[y] {
+			resolvers = append(resolvers, CreateSpeciesGridElementResolver(
+				r2.Point{X: float64(x), Y: float64(y)},
+				grid[y][x],
+				q.s,
+			))
 		}
 	}
 
