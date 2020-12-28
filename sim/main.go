@@ -253,7 +253,7 @@ func (s Sim) GetCellCount() int {
 }
 
 func (s *Sim) KillOldestCells() {
-	for i := 2; s.getAliveCells() >= s.maxCells; i++ {
+	for i := 1; s.getAliveCells() >= s.maxCells; i++ {
 		for cellIndex := range s.cells {
 			if s.cells[cellIndex].species.TimeToDie+s.cells[cellIndex].bornAt-s.iteration < i {
 				s.cells[cellIndex].alive = false
@@ -273,7 +273,7 @@ func (s *Sim) Create(verbose bool) {
 	}
 
 	s.cells = startCells
-	s.maxCells = 1e4
+	s.maxCells = 2e4
 	s.verbose = verbose
 }
 

@@ -176,17 +176,30 @@ func (s Species) getDietPoints() int {
 func (s Species) mutate() Species {
 	st := s
 
-	if rand.Float32() > .98 {
+	if rand.Float32() > .9 {
 		if len(st.diets) == 1 {
-			if st.hasDiet(Herbivore) {
-				st.diets = append(st.diets, Funghi)
-				st.Herbivore /= 2
-				st.Funghi = st.Herbivore
-			}
-			if st.hasDiet(Funghi) {
-				st.diets = append(st.diets, Herbivore)
-				st.Funghi /= 2
-				st.Herbivore = st.Funghi
+			if rand.Float32() > .9 {
+				if st.hasDiet(Herbivore) {
+					st.diets = append(st.diets, Funghi)
+					st.Herbivore /= 2
+					st.Funghi = st.Herbivore
+				}
+				if st.hasDiet(Funghi) {
+					st.diets = append(st.diets, Herbivore)
+					st.Funghi /= 2
+					st.Herbivore = st.Funghi
+				}
+			} else {
+				if st.hasDiet(Herbivore) {
+					st.diets = []Diet{Funghi}
+					st.Funghi = st.Herbivore
+					st.Herbivore = 0
+				}
+				if st.hasDiet(Funghi) {
+					st.diets = []Diet{Herbivore}
+					st.Herbivore = st.Funghi
+					st.Funghi = 0
+				}
 			}
 		} else {
 			diets := []Diet{Herbivore, Funghi}
