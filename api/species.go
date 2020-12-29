@@ -52,9 +52,10 @@ func (res SpeciesResolver) Cells() CellConnectionResolver {
 	cells := make([]sim.Cell, res.species.Count)
 	simCells := res.s.GetCells()
 	index := 0
-	for cellIndex := range simCells {
+	for cellIndex, cell := range simCells {
 		if simCells[cellIndex].GetSpecies().ID == res.species.ID {
-			cells[index] = simCells[cellIndex]
+			cells[index] = cell
+			index++
 		}
 	}
 
