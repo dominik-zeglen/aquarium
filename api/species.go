@@ -51,11 +51,10 @@ func (res SpeciesResolver) Funghi() int32 {
 func (res SpeciesResolver) Cells() CellConnectionResolver {
 	cells := make([]sim.Cell, res.species.Count)
 	simCells := res.s.GetCells()
-	index := 0
-	for cellIndex, cell := range simCells {
-		if simCells[cellIndex].GetSpecies().ID == res.species.ID {
-			cells[index] = cell
-			index++
+
+	for _, cell := range simCells {
+		if cell.GetSpecies().ID == res.species.ID {
+			cells = append(cells, cell)
 		}
 	}
 
