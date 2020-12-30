@@ -131,7 +131,7 @@ func (s *Sim) RunStep() IterationData {
 	s.cleanupSpecies()
 	data.Procreation.Species = s.species
 
-	if s.verbose {
+	if s.verbose || s.getAliveCells() == 0 {
 		fmt.Printf(
 			"Iteration %6d, cell count: %5d, alive cells: %5d, waste: %.4f, tolerance: %.2f-%.2f, %3d species",
 			s.iteration,
