@@ -95,13 +95,15 @@ func TestAreaResolver(t *testing.T) {
 
 	// When
 	variables, err := unmarshallVariables(`{
-		"start": {
-			"x": 0,
-			"y": 0
-		},
-		"end": {
-			"x": 0,
-			"y": 6000
+		"area": {
+			"start": {
+				"x": 0,
+				"y": 0
+			},
+			"end": {
+				"x": 0,
+				"y": 6000
+			}
 		}
 	}`)
 	if err != nil {
@@ -110,9 +112,14 @@ func TestAreaResolver(t *testing.T) {
 
 	res := schema.Exec(
 		context.TODO(),
-		`query GetArea($start: PointInput!, $end: PointInput!) {
-			area(start: $start, end: $end) {
-				id
+		`query GetArea($area: AreaInput!) {
+			cellList(filter: { area: $area}) {
+				count
+				edges {
+					node {
+						id
+					}
+				}
 			}
 		}`,
 		"GetArea",
