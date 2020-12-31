@@ -40,15 +40,8 @@ func (s *Sim) GetCells() CellList {
 	return s.cells
 }
 
-func (s Sim) GetAliveSpecies() SpeciesList {
-	species := SpeciesList{}
-	for speciesIndex := range s.species {
-		if !s.species[speciesIndex].Extinct {
-			species = append(species, s.species[speciesIndex])
-		}
-	}
-
-	return species
+func (s Sim) GetSpecies() SpeciesList {
+	return s.species
 }
 
 func (s *Sim) addSpecies(species Species) *Species {
@@ -200,7 +193,7 @@ func (s *Sim) RunStep() IterationData {
 			s.env.toxicity,
 			data.Waste.MinTolerance,
 			data.Waste.MaxTolerance,
-			len(s.GetAliveSpecies()),
+			len(s.GetSpecies().GetAlive()),
 		)
 		if data.Procreation.CanProcreate {
 			fmt.Printf("\n")

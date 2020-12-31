@@ -51,7 +51,7 @@ type SpeciesArgs struct {
 }
 
 func (q *Query) Species(args SpeciesArgs) *SpeciesResolver {
-	species := q.s.GetAliveSpecies()
+	species := q.s.GetSpecies()
 	id := int(args.ID)
 
 	for _, species := range species {
@@ -65,7 +65,7 @@ func (q *Query) Species(args SpeciesArgs) *SpeciesResolver {
 }
 
 func (q *Query) SpeciesList() SpeciesConnectionResolver {
-	species := q.s.GetAliveSpecies()
+	species := q.s.GetSpecies().GetAlive()
 
 	return CreateSpeciesConnectionResolver(species, q.s)
 }
@@ -80,7 +80,7 @@ func (q *Query) SpeciesGrid(args SpeciesGridArgs) []SpeciesGridElementResolver {
 		scale = *args.Area.Scale
 	}
 	cells := q.s.GetCells().GetArea(args.Area.Start, args.Area.End)
-	grid := q.s.GetAliveSpecies().GetArea(cells, int(scale))
+	grid := q.s.GetSpecies().GetAlive().GetArea(cells, int(scale))
 
 	resolvers := []SpeciesGridElementResolver{}
 

@@ -318,6 +318,21 @@ func getRandomHerbivore() Species {
 
 type SpeciesList []Species
 
+func (sl SpeciesList) GetAlive() SpeciesList {
+	species := make(SpeciesList, len(sl))
+
+	index := 0
+	for speciesIndex := range sl {
+		if !sl[speciesIndex].Extinct {
+			species[index] = sl[speciesIndex]
+			index++
+		}
+	}
+
+	return species[:index]
+
+}
+
 type SpeciesGridRow = map[int]SpeciesList
 type SpeciesGrid = map[int]SpeciesGridRow
 
