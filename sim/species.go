@@ -315,3 +315,44 @@ func getRandomHerbivore() Species {
 
 	return s
 }
+
+type SpeciesList []Species
+
+type SpeciesGridRow = map[int]SpeciesList
+type SpeciesGrid = map[int]SpeciesGridRow
+
+func (sl SpeciesList) GetArea(cells CellList, scale int) SpeciesGrid {
+	grid := SpeciesGrid{}
+
+	for cellIndex := range cells {
+		x := int(cells[cellIndex].position.X) / scale
+		y := int(cells[cellIndex].position.Y) / scale
+		cellSpecies := *cells[cellIndex].species
+
+		_, ok := grid[y]
+		if !ok {
+			grid[y] = SpeciesGridRow{}
+			grid[y][x] = []Species{cellSpecies}
+		} else {
+			species, ok := grid[y][x]
+			if !ok {
+				grid[y][x] = []Species{cellSpecies}
+			} else {
+				found := false
+				for speciesIndex := range species {
+					if species[speciesIndex].ID == cellSpecies.ID {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					grid[y][x] = append(species, cellSpecies)
+				}
+			}
+		}
+
+	}
+
+	return grid
+}

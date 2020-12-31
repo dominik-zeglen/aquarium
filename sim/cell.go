@@ -231,3 +231,47 @@ func getRandomCell(id int, e Environment, addSpecies AddSpecies) Cell {
 
 	return c
 }
+
+type CellList []Cell
+
+func (cl CellList) GetArea(start r2.Point, end r2.Point) CellList {
+	cells := make(CellList, len(cl))
+
+	index := 0
+	for cellIndex, cell := range cl {
+		position := cell.GetPosition()
+		if position.X > start.X && position.X < end.X &&
+			position.Y > start.Y && position.Y < end.Y {
+			cells[index] = cl[cellIndex]
+			index++
+		}
+	}
+
+	return cells[:index]
+}
+
+func (cl CellList) GetAlive() CellList {
+	cells := make(CellList, len(cl))
+
+	index := 0
+	for cellIndex, cell := range cl {
+		if cell.alive {
+			cells[index] = cl[cellIndex]
+			index++
+		}
+	}
+
+	return cells[:index]
+}
+
+// GetAliveCount serves as an optimisation
+func (cl CellList) GetAliveCount() int {
+	counter := 0
+	for _, cell := range cl {
+		if cell.alive {
+			counter++
+		}
+	}
+
+	return counter
+}

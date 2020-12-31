@@ -37,7 +37,7 @@ func (q *Query) CellList(args CellListArgs) CellConnectionResolver {
 	var cells []sim.Cell
 
 	if args.Filter != nil && args.Filter.Area != nil {
-		cells = q.s.GetArea(args.Filter.Area.Start, args.Filter.Area.End)
+		cells = q.s.GetCells().GetArea(args.Filter.Area.Start, args.Filter.Area.End)
 	} else {
 
 		cells = q.s.GetCells()
@@ -79,7 +79,8 @@ func (q *Query) SpeciesGrid(args SpeciesGridArgs) []SpeciesGridElementResolver {
 	if args.Area.Scale != nil {
 		scale = *args.Area.Scale
 	}
-	grid := q.s.GetSpeciesInArea(args.Area.Start, args.Area.End, int(scale))
+	cells := q.s.GetCells().GetArea(args.Area.Start, args.Area.End)
+	grid := q.s.GetAliveSpecies().GetArea(cells, int(scale))
 
 	resolvers := []SpeciesGridElementResolver{}
 
