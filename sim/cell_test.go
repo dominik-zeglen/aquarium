@@ -1,6 +1,8 @@
 package sim
 
-import "testing"
+import (
+	"testing"
+)
 
 var env Environment
 
