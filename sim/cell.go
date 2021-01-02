@@ -86,44 +86,41 @@ func (c *Cell) procreate(
 	lastID int,
 	env Environment,
 	addSpecies AddSpecies,
-) []Cell {
-	descendants := []Cell{}
+) *Cell {
 
 	if canProcreate && c.canProcreate(iteration) && rand.Float32() > .7 {
 		food := c.species.maxCapacity / int(c.species.division+1)
 
-		for i := 0; i < int(c.species.division); i++ {
-			descendant := Cell{}
-			descendant.id = lastID + i + 1
-			descendant.satiation = food
-			descendant.action = idle
-			descendant.bornAt = iteration
-			descendant.capacity = 0
-			descendant.procreatedAt = iteration
-			descendant.alive = true
+		descendant := Cell{}
+		descendant.id = lastID + 1
+		descendant.satiation = food
+		descendant.action = idle
+		descendant.bornAt = iteration
+		descendant.capacity = 0
+		descendant.procreatedAt = iteration
+		descendant.alive = true
 
-			vec := getRandomVec().Mul(float64(c.species.size))
+		vec := getRandomVec().Mul(float64(c.species.size))
 
-			descendant.position = c.position.Add(vec)
-			c.position = c.position.Sub(vec)
+		descendant.position = c.position.Add(vec)
+		c.position = c.position.Sub(vec)
 
-			c.satiation = food
-			c.bornAt = iteration
+		c.satiation = food
+		c.bornAt = iteration
 
-			if rand.Float32() > .99 {
-				species := c.species.mutate()
-				species.EmergedAt = iteration
-				c.species = addSpecies(species)
-			}
-
-			descendant.species = c.species
-			descendant.hp = descendant.species.getMaxHP()
-
-			descendants = append(descendants, descendant)
+		if rand.Float32() > .99 {
+			species := c.species.mutate()
+			species.EmergedAt = iteration
+			c.species = addSpecies(species)
 		}
+
+		descendant.species = c.species
+		descendant.hp = descendant.species.getMaxHP()
+
+		return &descendant
 	}
 
-	return descendants
+	return nil
 }
 
 func (c *Cell) move() {
@@ -172,20 +169,20 @@ func (c *Cell) sim(
 	lastID int,
 	addSpecies AddSpecies,
 	canProcreate bool,
-) []Cell {
-	descendants := []Cell{}
-
+) *Cell {
 	if c.alive {
 		c.eat(env, iteration)
 		c.move()
-		descendants = c.procreate(canProcreate, iteration, lastID, env, addSpecies)
+		descendant := c.procreate(canProcreate, iteration, lastID, env, addSpecies)
 		if c.shouldDie(env, iteration) {
 			c.alive = false
 			c.diedAt = iteration
 		}
+
+		return descendant
 	}
 
-	return descendants
+	return nil
 }
 
 // Getters

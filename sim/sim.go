@@ -111,10 +111,10 @@ func (s *Sim) Create(verbose bool) {
 	s.iteration = 0
 	s.env = Environment{4, 10000, 10000}
 
-	startCells := CellList{}
+	startCells := make(CellList, 100)
 
 	for i := 0; i < 100; i++ {
-		startCells = append(startCells, getRandomCell(i, s.env, s.addSpecies))
+		startCells[i] = getRandomCell(i, s.env, s.addSpecies)
 	}
 
 	s.cells = startCells
@@ -125,7 +125,7 @@ func (s *Sim) Create(verbose bool) {
 func (s *Sim) RunStep() IterationData {
 	s.iteration++
 
-	nextGenCells := CellList{}
+	nextGenCells := make(CellList, 2*s.maxCells)
 	waste := float64(0)
 
 	data := IterationData{
@@ -143,6 +143,7 @@ func (s *Sim) RunStep() IterationData {
 	}
 
 	data.Procreation.CanProcreate = data.AliveCellCount < s.maxCells
+	index := 0
 
 	for cellIndex, cell := range s.cells {
 		if cell.alive {
@@ -168,16 +169,17 @@ func (s *Sim) RunStep() IterationData {
 			}
 		}
 
-		descendants := s.cells[cellIndex].sim(
+		descendant := s.cells[cellIndex].sim(
 			s.env,
 			s.iteration,
-			s.cells[data.CellCount-1].id,
+			nextGenCells[data.CellCount-1].id,
 			s.addSpecies,
 			data.Procreation.CanProcreate,
 		)
 
-		if len(descendants) > 0 {
-			nextGenCells = append(nextGenCells, descendants...)
+		if descendant != nil {
+			nextGenCells[index] = *descendant
+			index++
 		}
 
 		if !s.cells[cellIndex].alive && s.iteration-s.cells[cellIndex].diedAt > 10 {
@@ -186,12 +188,13 @@ func (s *Sim) RunStep() IterationData {
 			if s.cells[cellIndex].alive {
 				waste += s.cells[cellIndex].species.getWaste(s.env.getToxicityOnHeight(s.cells[cellIndex].position.Y))
 			}
-			nextGenCells = append(nextGenCells, s.cells[cellIndex])
+			nextGenCells[index] = s.cells[cellIndex]
+			index++
 		}
 
 	}
 
-	s.cells = nextGenCells
+	s.cells = nextGenCells[:index]
 	s.env.changeToxicity(waste)
 	s.cleanupSpecies()
 	data.Procreation.Species = s.species
