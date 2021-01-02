@@ -1,6 +1,9 @@
 package sim
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 type Sim struct {
 	cells         CellList
@@ -10,6 +13,7 @@ type Sim struct {
 	iteration     int
 	maxCells      int
 	verbose       bool
+	lock          sync.Mutex
 }
 
 func (d *IterationData) from(from IterationData) {
@@ -42,6 +46,14 @@ func (s *Sim) GetCells() CellList {
 
 func (s Sim) GetSpecies() SpeciesList {
 	return s.species
+}
+
+func (s *Sim) Lock() {
+	s.lock.Lock()
+}
+
+func (s *Sim) Unlock() {
+	s.lock.Unlock()
 }
 
 func (s *Sim) addSpecies(species Species) *Species {
@@ -209,6 +221,7 @@ func (s *Sim) RunLoop(data *IterationData) {
 	consecutiveNoProcreateIterations := 0
 
 	for {
+		s.lock.Lock()
 		iterationData := s.RunStep()
 		data.from(iterationData)
 
@@ -221,6 +234,7 @@ func (s *Sim) RunLoop(data *IterationData) {
 		if consecutiveNoProcreateIterations > 2 {
 			s.KillOldestCells()
 		}
+		s.lock.Unlock()
 
 		if s.GetCellCount() == 0 {
 			break
