@@ -125,7 +125,7 @@ func (s *Sim) Create(verbose bool) {
 func (s *Sim) RunStep() IterationData {
 	s.iteration++
 
-	nextGenCells := make(CellList, 2*s.maxCells)
+	nextGenCells := make(CellList, s.maxCells*5)
 	waste := float64(0)
 
 	data := IterationData{
