@@ -15,11 +15,13 @@ type CellArgs struct {
 }
 
 func (q *Query) Cell(args CellArgs) *CellResolver {
-	cells := q.s.GetCells()
-	id := int(args.ID)
+	// cells := q.s.GetCells()
+	cells := sim.CellList{}
+	// id := int(args.ID)
 
 	for _, cell := range cells {
-		if cell.GetID() == id {
+		// if cell.GetID() == id {
+		if false {
 			resolver := CreateCellResolver(&cell, q.s)
 			return &resolver
 		}
@@ -37,10 +39,11 @@ func (q *Query) CellList(args CellListArgs) CellConnectionResolver {
 	var cells []sim.Cell
 
 	if args.Filter != nil && args.Filter.Area != nil {
-		cells = q.s.GetCells().GetArea(args.Filter.Area.Start, args.Filter.Area.End)
+		// cells = q.s.GetCells().GetArea(args.Filter.Area.Start, args.Filter.Area.End)
+		cells = sim.CellList{}
 	} else {
-
-		cells = q.s.GetCells()
+		// cells = q.s.GetCells()
+		cells = sim.CellList{}
 	}
 
 	return CreateCellConnectionResolver(cells, q.s)
@@ -79,8 +82,9 @@ func (q *Query) SpeciesGrid(args SpeciesGridArgs) []SpeciesGridElementResolver {
 	if args.Area.Scale != nil {
 		scale = *args.Area.Scale
 	}
-	cells := q.s.GetCells().GetArea(args.Area.Start, args.Area.End)
-	grid := q.s.GetSpecies().GetAlive().GetArea(cells, int(scale))
+	// cells := q.s.GetCells().GetArea(args.Area.Start, args.Area.End)
+	organisms := sim.OrganismList{}
+	grid := q.s.GetSpecies().GetAlive().GetArea(organisms, int(scale))
 
 	resolvers := []SpeciesGridElementResolver{}
 

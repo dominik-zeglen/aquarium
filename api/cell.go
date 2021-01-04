@@ -15,7 +15,8 @@ func CreateCellResolver(cell *sim.Cell, sim *sim.Sim) CellResolver {
 }
 
 func (res CellResolver) ID() int32 {
-	return int32(res.cell.GetID())
+	// return int32(res.cell.GetID())
+	return 0
 }
 
 func (res CellResolver) Alive() bool {
@@ -31,7 +32,7 @@ func (res CellResolver) Capacity() int32 {
 }
 
 func (res CellResolver) Food() int32 {
-	return int32(res.cell.GetFood(res.s.GetEnvironment(), res.s.GetIteration()))
+	return int32(res.cell.GetFood(res.s.GetEnvironment(), res.s.GetIteration(), 0))
 }
 
 func (res CellResolver) Hp() int32 {
@@ -47,7 +48,8 @@ func (res CellResolver) Satiation() int32 {
 }
 
 func (res CellResolver) Species() SpeciesResolver {
-	return CreateSpeciesResolver(res.cell.GetSpecies(), res.s)
+	// return CreateSpeciesResolver(res.cell.GetSpecies(), res.s)
+	return SpeciesResolver{}
 }
 
 type CellConnectionEdgeResolver struct {

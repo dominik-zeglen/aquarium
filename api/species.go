@@ -19,11 +19,13 @@ func (res SpeciesResolver) ID() int32 {
 }
 
 func (res SpeciesResolver) Consumption() int32 {
-	return int32(res.species.GetConsumption())
+	// return int32(res.species.GetConsumption())
+	return 0
 }
 
 func (res SpeciesResolver) Name() string {
-	return res.species.GetName()
+	// return res.species.GetName()
+	return ""
 }
 
 func (res SpeciesResolver) EmergedAt() int32 {
@@ -31,7 +33,8 @@ func (res SpeciesResolver) EmergedAt() int32 {
 }
 func (res SpeciesResolver) Diet() []string {
 	var diets []string
-	speciesDiets := res.species.GetDiet()
+	// speciesDiets := res.species.GetDiet()
+	speciesDiets := []sim.Diet{}
 
 	for _, diet := range speciesDiets {
 		diets = append(diets, diet.String())
@@ -40,23 +43,26 @@ func (res SpeciesResolver) Diet() []string {
 	return diets
 }
 func (res SpeciesResolver) Carnivore() int32 {
-	return int32(res.species.Carnivore)
+	// return int32(res.species.Carnivore)
+	return 0
 }
 func (res SpeciesResolver) Herbivore() int32 {
-	return int32(res.species.Herbivore)
+	// return int32(res.species.Herbivore)
+	return 0
 }
 func (res SpeciesResolver) Funghi() int32 {
-	return int32(res.species.Funghi)
+	// return int32(res.species.Funghi)
+	return 0
 }
 func (res SpeciesResolver) Cells() CellConnectionResolver {
-	cells := make([]sim.Cell, res.species.Count)
-	simCells := res.s.GetCells()
+	cells := make(sim.CellList, res.species.Count)
+	// simCells := res.s.GetCells()
 
-	for _, cell := range simCells {
-		if cell.GetSpecies().ID == res.species.ID {
-			cells = append(cells, cell)
-		}
-	}
+	// for _, cell := range simCells {
+	// if cell.GetSpecies().ID == res.species.ID {
+	// cells = append(cells, cell)
+	// }
+	// }
 
 	return CreateCellConnectionResolver(cells, res.s)
 }

@@ -1,13 +1,13 @@
 package sim
 
-import (
-	"testing"
-)
+// import (
+// 	"testing"
+// )
 
-func BenchmarkMutateOnce(b *testing.B) {
-	species := getRandomHerbivore()
+// func BenchmarkMutateOnce(b *testing.B) {
+// 	species := getRandomHerbivore()
 
-	for i := 0; i < b.N; i++ {
-		species.mutateOnce()
-	}
-}
+// 	for i := 0; i < b.N; i++ {
+// 		species.mutateOnce()
+// 	}
+// }
