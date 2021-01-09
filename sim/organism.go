@@ -86,6 +86,16 @@ func (o *Organism) mutate(addSpecies AddSpecies) {
 	if rand.Float32() > .995 {
 		newSpecies := o.species.mutate()
 		o.species = addSpecies(newSpecies)
+
+		for cellIndex := range o.cells {
+			ctID := o.cells[cellIndex].cellType.ID
+
+			for cellTypeIndex := range o.species.types {
+				if o.species.types[cellTypeIndex].ID == ctID {
+					o.cells[cellIndex].cellType = &o.species.types[cellTypeIndex]
+				}
+			}
+		}
 	}
 }
 
@@ -105,7 +115,7 @@ func (o *Organism) move() r2.Point {
 			Normalize()
 	}
 
-	scaledMoveVec := moveVec.Mul(float64(o.GetMobility()*3) / float64(o.GetMass()))
+	scaledMoveVec := moveVec.Mul(float64(o.GetMobility()*10) / float64(o.GetMass()))
 	o.position = o.position.Add(scaledMoveVec)
 
 	return scaledMoveVec
