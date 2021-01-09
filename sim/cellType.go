@@ -5,7 +5,7 @@ import (
 )
 
 type CellType struct {
-	ID int `json:"id"`
+	ID int
 
 	shape string
 	diets []Diet
@@ -15,12 +15,12 @@ type CellType struct {
 	membrane int
 	enzymes  int
 
-	Herbivore int8 `json:"herbivore"`
-	Carnivore int8 `json:"carnivore"`
-	Funghi    int8 `json:"funghi"`
+	Herbivore int8
+	Carnivore int8
+	Funghi    int8
 
-	TimeToDie      int8    `json:"timeToDie"`
-	WasteTolerance float64 `json:"wasteTolerance"`
+	TimeToDie      int8
+	WasteTolerance float64
 
 	maxSatiation int
 	consumption  int
@@ -163,6 +163,8 @@ func (t CellType) getDietPoints() int {
 
 func (t CellType) mutate() CellType {
 	ct := t
+	ct.diets = make([]Diet, len(t.diets))
+	copy(ct.diets, t.diets)
 
 	if rand.Float32() > .9 {
 		if len(ct.diets) == 1 {
@@ -261,11 +263,11 @@ func (t CellType) mutateOnce() CellType {
 			n.procreationCd += int8(value)
 		}
 
-		if attr > .73 && attr < .9 {
+		if attr > .73 && attr < .85 {
 			n.WasteTolerance += float64(value) / 4
 		}
 
-		if attr > .9 && attr < .95 {
+		if attr > .85 && attr < .95 {
 			n.maxSatiation += value
 		}
 

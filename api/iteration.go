@@ -47,8 +47,8 @@ func (res IterationProcreationResolver) MinCd() int32 {
 func (res IterationProcreationResolver) MinHeight() float64 {
 	return res.p.MinHeight
 }
-func (res IterationProcreationResolver) Species() SpeciesConnectionResolver {
-	return CreateSpeciesConnectionResolver(res.p.Species, res.s)
+func (res IterationProcreationResolver) Species() []SpeciesResolver {
+	return createSpeciesResolverList(res.p.Species)
 }
 
 type IterationResolver struct {

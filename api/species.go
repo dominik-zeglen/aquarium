@@ -1,106 +1,56 @@
 package api
 
 import (
+	"context"
+
+	"github.com/dominik-zeglen/aquarium/middleware"
 	"github.com/dominik-zeglen/aquarium/sim"
 	"github.com/golang/geo/r2"
 )
 
 type SpeciesResolver struct {
-	species *sim.Species
-	s       *sim.Sim
-}
-
-func CreateSpeciesResolver(species *sim.Species, sim *sim.Sim) SpeciesResolver {
-	return SpeciesResolver{species, sim}
-}
-
-func (res SpeciesResolver) ID() int32 {
-	return int32(res.species.ID)
-}
-
-func (res SpeciesResolver) Consumption() int32 {
-	// return int32(res.species.GetConsumption())
-	return 0
-}
-
-func (res SpeciesResolver) Name() string {
-	// return res.species.GetName()
-	return ""
-}
-
-func (res SpeciesResolver) EmergedAt() int32 {
-	return int32(res.species.EmergedAt)
-}
-func (res SpeciesResolver) Diet() []string {
-	var diets []string
-	// speciesDiets := res.species.GetDiet()
-	speciesDiets := []sim.Diet{}
-
-	for _, diet := range speciesDiets {
-		diets = append(diets, diet.String())
-	}
-
-	return diets
-}
-func (res SpeciesResolver) Carnivore() int32 {
-	// return int32(res.species.Carnivore)
-	return 0
-}
-func (res SpeciesResolver) Herbivore() int32 {
-	// return int32(res.species.Herbivore)
-	return 0
-}
-func (res SpeciesResolver) Funghi() int32 {
-	// return int32(res.species.Funghi)
-	return 0
-}
-func (res SpeciesResolver) Cells() CellConnectionResolver {
-	cells := make(sim.CellList, res.species.Count)
-	// simCells := res.s.GetCells()
-
-	// for _, cell := range simCells {
-	// if cell.GetSpecies().ID == res.species.ID {
-	// cells = append(cells, cell)
-	// }
-	// }
-
-	return CreateCellConnectionResolver(cells, res.s)
-}
-
-type SpeciesConnectionEdgeResolver struct {
 	species sim.Species
-	s       *sim.Sim
 }
 
-func CreateSpeciesConnectionEdgeResolver(species sim.Species, sim *sim.Sim) SpeciesConnectionEdgeResolver {
-	return SpeciesConnectionEdgeResolver{species, sim}
-}
+func createSpeciesResolverList(species sim.SpeciesList) []SpeciesResolver {
+	resolvers := make([]SpeciesResolver, len(species))
 
-func (res SpeciesConnectionEdgeResolver) Node() SpeciesResolver {
-	return CreateSpeciesResolver(&res.species, res.s)
-}
-
-type SpeciesConnectionResolver struct {
-	species []sim.Species
-	s       *sim.Sim
-}
-
-func CreateSpeciesConnectionResolver(species []sim.Species, sim *sim.Sim) SpeciesConnectionResolver {
-	return SpeciesConnectionResolver{species, sim}
-}
-
-func (res SpeciesConnectionResolver) Count() int32 {
-	return int32(len(res.species))
-}
-
-func (res SpeciesConnectionResolver) Edges() []SpeciesConnectionEdgeResolver {
-	resolvers := make([]SpeciesConnectionEdgeResolver, len(res.species))
-
-	for speciesIndex := range res.species {
-		resolvers[speciesIndex] = CreateSpeciesConnectionEdgeResolver(res.species[speciesIndex], res.s)
+	for speciesIndex := range species {
+		resolvers[speciesIndex] = SpeciesResolver{species[speciesIndex]}
 	}
 
 	return resolvers
+}
+
+func (res SpeciesResolver) ID() int32 {
+	return int32(res.species.GetID())
+}
+
+func (res SpeciesResolver) Name() string {
+	return res.species.GetName()
+}
+
+func (res SpeciesResolver) EmergedAt() int32 {
+	return int32(0)
+}
+func (res SpeciesResolver) Diet() []string {
+	diets := res.species.GetDiets()
+	dietNames := make([]string, len(diets))
+
+	for dietIndex, diet := range diets {
+		dietNames[dietIndex] = diet.String()
+	}
+
+	return dietNames
+}
+func (res SpeciesResolver) Organisms(ctx context.Context) []OrganismResolver {
+	s := ctx.Value(middleware.SimContextKey).(*sim.Sim)
+	organisms := s.GetOrganisms().GetSpecies(res.species.GetID())
+
+	return createOrganismResolverList(organisms)
+}
+func (res SpeciesResolver) CellTypes() []CellTypeResolver {
+	return createCellTypeResolverList(res.species.GetTypes())
 }
 
 type SpeciesGridElementResolver struct {
@@ -121,7 +71,7 @@ func (res SpeciesGridElementResolver) Species() []SpeciesResolver {
 	resolvers := make([]SpeciesResolver, len(res.species))
 
 	for speciesIndex := range res.species {
-		resolvers[speciesIndex] = CreateSpeciesResolver(&res.species[speciesIndex], res.s)
+		resolvers[speciesIndex] = SpeciesResolver{res.species[speciesIndex]}
 	}
 
 	return resolvers

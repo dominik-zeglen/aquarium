@@ -43,7 +43,7 @@ func (o *Organism) eat(e Environment, iteration int) int {
 
 	// Feed cells that can reproduce
 	for cellIndex := range o.cells {
-		canReproduce := len(o.species.Produces[o.cells[cellIndex].cellType.ID])
+		canReproduce := len(o.species.produces[o.cells[cellIndex].cellType.ID])
 		if o.cells[cellIndex].alive && canReproduce > 0 && food > 0 {
 			food -= o.cells[cellIndex].eat(food)
 		}
@@ -65,11 +65,11 @@ func (o *Organism) procreate(
 ) {
 	if canProcreate {
 		for cellIndex := range o.cells {
-			produced := o.species.Produces[o.cells[cellIndex].cellType.ID]
+			produced := o.species.produces[o.cells[cellIndex].cellType.ID]
 			producedCt := make([]*CellType, len(produced))
 
 			for ctIndex := range produced {
-				producedCt[ctIndex] = &o.species.Types[ctIndex]
+				producedCt[ctIndex] = &o.species.types[ctIndex]
 			}
 
 			if o.cells[cellIndex].shouldProcreate(iteration, producedCt) {
@@ -77,24 +77,23 @@ func (o *Organism) procreate(
 				child.id = o.cells[len(o.cells)-1].id + 1
 				o.cells = append(o.cells, child)
 			}
+
 		}
 	}
 }
 
-func (o Organism) mutate() *Species {
+func (o *Organism) mutate(addSpecies AddSpecies) {
 	if rand.Float32() > .995 {
 		newSpecies := o.species.mutate()
-		return &newSpecies
+		o.species = addSpecies(newSpecies)
 	}
-
-	return nil
 }
 
 func (o Organism) IsAlive() bool {
 	return o.cells.GetAliveCount() > 0
 }
 
-func (o *Organism) move() {
+func (o *Organism) move() r2.Point {
 	var moveVec r2.Point
 
 	if o.action == idle {
@@ -106,8 +105,10 @@ func (o *Organism) move() {
 			Normalize()
 	}
 
-	moveVec = moveVec.Mul(float64(o.GetMobility() / o.GetMass()))
-	o.position = o.position.Add(moveVec)
+	scaledMoveVec := moveVec.Mul(float64(o.GetMobility()*3) / float64(o.GetMass()))
+	o.position = o.position.Add(scaledMoveVec)
+
+	return scaledMoveVec
 }
 
 func (o *Organism) killCells(env Environment, iteration int) {
@@ -177,29 +178,7 @@ func (o *Organism) split() []Organism {
 		o.cells = grids[0]
 
 		for gridIndex, grid := range grids[1:] {
-			boxStart := grid[0].position
-			boxEnd := grid[0].position
-
-			for cIndex := range grid {
-				if boxStart.X > grid[cIndex].position.X {
-					boxStart.X = grid[cIndex].position.X
-				}
-				if boxStart.Y > grid[cIndex].position.Y {
-					boxStart.Y = grid[cIndex].position.Y
-				}
-
-				if boxEnd.X < grid[cIndex].position.X {
-					boxEnd.X = grid[cIndex].position.X
-				}
-				if boxEnd.Y < grid[cIndex].position.Y {
-					boxEnd.Y = grid[cIndex].position.Y
-				}
-			}
-
-			center := r2.Point{
-				X: (boxEnd.X + boxStart.X) / 2,
-				Y: (boxEnd.Y + boxStart.Y) / 2,
-			}
+			center := grid.GetCenter()
 
 			for cIndex := range grid {
 				grid[cIndex].id = cIndex
@@ -207,8 +186,8 @@ func (o *Organism) split() []Organism {
 			}
 
 			organisms[gridIndex] = *o
-			o.cells = grid
-			o.position = center
+			organisms[gridIndex].cells = grid
+			organisms[gridIndex].position = o.position.Add(center)
 		}
 
 		return organisms
@@ -226,12 +205,7 @@ func (o *Organism) sim(
 	if o.IsAlive() {
 		o.eat(env, iteration)
 		o.move()
-
-		newSpecies := o.mutate()
-		if newSpecies != nil {
-			s := addSpecies(*newSpecies)
-			o.species = s
-		}
+		o.mutate(addSpecies)
 
 		o.procreate(canProcreate, iteration)
 		o.killCells(env, iteration)
@@ -270,10 +244,19 @@ func (o Organism) GetPosition() r2.Point {
 func (o Organism) GetBornAt() int {
 	return o.bornAt
 }
+func (o Organism) GetCells() CellList {
+	return o.cells
+}
+func (o Organism) GetID() int {
+	return o.id
+}
+func (o Organism) GetSpecies() Species {
+	return *o.species
+}
 
 func getRandomOrganism(id int, e Environment, addSpecies AddSpecies) Organism {
 	s := addSpecies(getRandomHerbivore())
-	ct := &s.Types[0]
+	ct := &s.types[0]
 
 	c := Cell{
 		alive:     true,
@@ -286,8 +269,8 @@ func getRandomOrganism(id int, e Environment, addSpecies AddSpecies) Organism {
 		cells:  CellList{c},
 		action: idle,
 		position: r2.Point{
-			X: float64(e.width) * rand.Float64(),
-			Y: float64(e.height) * rand.Float64(),
+			X: float64(e.width)*rand.Float64()*.8 + float64(e.width)/10,
+			Y: float64(e.height)*rand.Float64()*.8 + float64(e.height)/10,
 		},
 		species: s,
 	}
@@ -313,17 +296,17 @@ func (ol OrganismList) GetArea(start r2.Point, end r2.Point) OrganismList {
 }
 
 func (ol OrganismList) GetAlive() OrganismList {
-	cells := make(OrganismList, len(ol))
+	organisms := make(OrganismList, len(ol))
 
 	index := 0
 	for organismIndex, organism := range ol {
 		if organism.IsAlive() {
-			cells[index] = ol[organismIndex]
+			organisms[index] = ol[organismIndex]
 			index++
 		}
 	}
 
-	return cells[:index]
+	return organisms[:index]
 }
 
 // GetAliveCount serves as an optimisation
@@ -336,4 +319,18 @@ func (ol OrganismList) GetAliveCount() int {
 	}
 
 	return counter
+}
+
+func (ol OrganismList) GetSpecies(id int) OrganismList {
+	organisms := make(OrganismList, len(ol))
+
+	index := 0
+	for organismIndex, organism := range ol {
+		if organism.species.id == id {
+			organisms[index] = ol[organismIndex]
+			index++
+		}
+	}
+
+	return organisms[:index]
 }

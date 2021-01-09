@@ -73,9 +73,9 @@ func (s *Sim) Unlock() {
 }
 
 func (s *Sim) addSpecies(species Species) *Species {
-	species.ID = s.speciesLastID
-	species.EmergedAt = s.iteration
-	species.Count = 1
+	species.id = s.speciesLastID
+	species.emergedAt = s.iteration
+	species.count = 1
 	s.speciesLastID++
 	s.species = append(s.species, species)
 	return &s.species[len(s.species)-1]
@@ -84,7 +84,7 @@ func (s *Sim) addSpecies(species Species) *Species {
 func (s *Sim) removeSpecies(id int) {
 	i := 0
 	for ; i < len(s.species); i++ {
-		if s.species[i].ID == id {
+		if s.species[i].id == id {
 			break
 		}
 	}
@@ -97,17 +97,17 @@ func (s *Sim) cleanupSpecies() {
 	idsToDelete := []int{}
 
 	for oIndex := range s.organisms {
-		specimenCount[s.organisms[oIndex].species.ID]++
+		specimenCount[s.organisms[oIndex].species.id]++
 	}
 
 	for speciesIndex, species := range s.species {
-		count, found := specimenCount[species.ID]
+		count, found := specimenCount[species.id]
 
 		if !found {
-			idsToDelete = append(idsToDelete, s.species[speciesIndex].ID)
+			idsToDelete = append(idsToDelete, s.species[speciesIndex].id)
 		}
-		s.species[speciesIndex].Extinct = count == 0
-		s.species[speciesIndex].Count = count
+		s.species[speciesIndex].extinct = count == 0
+		s.species[speciesIndex].count = count
 	}
 
 	for _, id := range idsToDelete {
@@ -131,15 +131,16 @@ func (s *Sim) KillOldestCells() {
 func (s *Sim) Create(verbose bool) {
 	s.iteration = 0
 	s.env = Environment{4, 10000, 10000}
+	startCellCount := 200
 
-	startCells := make(OrganismList, 100)
+	startCells := make(OrganismList, startCellCount)
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < startCellCount; i++ {
 		startCells[i] = getRandomOrganism(i, s.env, s.addSpecies)
 	}
 
 	s.organisms = startCells
-	s.maxCells = 2e4
+	s.maxCells = 5e3
 	s.verbose = verbose
 }
 
@@ -154,7 +155,7 @@ func (s *Sim) RunStep() IterationData {
 		AliveCellCount: s.GetAliveCellCount(),
 		Iteration:      s.iteration,
 		Waste: WasteData{
-			MinTolerance: s.species[0].Types[0].WasteTolerance,
+			MinTolerance: s.species[0].types[0].WasteTolerance,
 			Waste:        s.env.toxicity,
 		},
 		Procreation: ProcreationData{
@@ -167,13 +168,13 @@ func (s *Sim) RunStep() IterationData {
 	index := 0
 
 	for _, species := range s.species {
-		if !species.Extinct {
-			for tIndex := range species.Types {
-				if data.Waste.MaxTolerance < species.Types[tIndex].WasteTolerance {
-					data.Waste.MaxTolerance = species.Types[tIndex].WasteTolerance
+		if !species.extinct {
+			for tIndex := range species.types {
+				if data.Waste.MaxTolerance < species.types[tIndex].WasteTolerance {
+					data.Waste.MaxTolerance = species.types[tIndex].WasteTolerance
 				}
-				if data.Waste.MinTolerance > species.Types[tIndex].WasteTolerance {
-					data.Waste.MinTolerance = species.Types[tIndex].WasteTolerance
+				if data.Waste.MinTolerance > species.types[tIndex].WasteTolerance {
+					data.Waste.MinTolerance = species.types[tIndex].WasteTolerance
 				}
 			}
 		}
@@ -221,14 +222,11 @@ func (s *Sim) RunStep() IterationData {
 	s.cleanupSpecies()
 	data.Procreation.Species = s.species
 
-	if s.iteration == 1000 {
-		fmt.Println("oh")
-	}
-
 	if s.verbose || s.GetAliveCellCount() == 0 {
 		fmt.Printf(
-			"Iteration %6d, organisms: %5d, cells: %5d, waste: %.4f %d species",
+			"Iteration %6d, organisms: %5d, alive: %5d, cells: %5d, waste: %.4f %d species",
 			s.iteration,
+			len(s.organisms),
 			s.GetAliveCount(),
 			s.GetAliveCellCount(),
 			s.env.toxicity,
@@ -267,12 +265,12 @@ func (s *Sim) RunLoop(data *IterationData) {
 			break
 		}
 
-		// if iterationData.Iteration == 1 {
+		// if iterationData.Iteration == 2 {
 		// 	break
 		// }
 
 		// if true {
-		// 	time.Sleep(time.Second * 2)
+		// 	time.Sleep(time.Second)
 		// }
 
 	}

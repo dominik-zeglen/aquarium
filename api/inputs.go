@@ -8,7 +8,7 @@ type AreaInput struct {
 	Scale *int32
 }
 
-type CellFilter struct {
+type OrganismFilter struct {
 	Area *AreaInput
 }
 

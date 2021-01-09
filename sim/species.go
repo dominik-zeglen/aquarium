@@ -1,32 +1,39 @@
 package sim
 
 import (
+	"fmt"
 	"math/rand"
 )
 
 type Species struct {
-	ID        int  `json:"id"`
-	EmergedAt int  `json:"emergedAt"`
-	Extinct   bool `json:"extinct"`
-	Count     int  `json:"count"`
+	id        int
+	emergedAt int
+	extinct   bool
+	count     int
 
-	Types    []CellType
-	Produces [][]int
+	types    []CellType
+	produces [][]int
 }
 
 func (s Species) mutate() Species {
 	n := s
 
-	typeIndex := rand.Intn(len(n.Types))
-	mutatedType := n.Types[typeIndex].mutate()
-	n.Types[typeIndex] = mutatedType
+	n.produces = make([][]int, len(s.produces))
+	n.types = make([]CellType, len(s.types))
+
+	copy(n.produces, s.produces)
+	copy(n.types, s.types)
+
+	typeIndex := rand.Intn(len(n.types))
+	mutatedType := n.types[typeIndex].mutate()
+	n.types[typeIndex] = mutatedType
 
 	return n
 }
 
 func getRandomHerbivore() Species {
 	return Species{
-		Types: []CellType{{
+		types: []CellType{{
 			ID:             0,
 			diets:          []Diet{Herbivore},
 			maxCapacity:    rand.Intn(30),
@@ -37,10 +44,51 @@ func getRandomHerbivore() Species {
 			consumption:    10,
 			procreationCd:  int8(rand.Intn(4) + 8),
 			WasteTolerance: float64(rand.Intn(16))/4 + 4,
-			mobility:       20,
+			mobility:       100,
 		}},
-		Produces: [][]int{{0}},
+		produces: [][]int{{0}},
 	}
+}
+
+// Getters
+
+func (s Species) GetID() int {
+	return s.id
+}
+
+func (s Species) GetDiets() []Diet {
+	diets := []Diet{}
+
+	for _, cellType := range s.types {
+		for _, diet := range cellType.diets {
+			if !hasDiet(diet, diets) {
+				diets = append(diets, diet)
+			}
+		}
+	}
+
+	return diets
+}
+
+func (s Species) GetName() string {
+	name := ""
+
+	for _, diet := range s.GetDiets() {
+		switch diet {
+		case Funghi:
+			name += "F"
+			break
+		case Herbivore:
+			name += "H"
+			break
+		}
+	}
+
+	return fmt.Sprintf("%s-%d-%d", name, s.emergedAt, s.id)
+}
+
+func (s Species) GetTypes() []CellType {
+	return s.types
 }
 
 type SpeciesList []Species
@@ -50,7 +98,7 @@ func (sl SpeciesList) GetAlive() SpeciesList {
 
 	index := 0
 	for speciesIndex := range sl {
-		if !sl[speciesIndex].Extinct {
+		if !sl[speciesIndex].extinct {
 			species[index] = sl[speciesIndex]
 			index++
 		}
@@ -82,7 +130,7 @@ func (sl SpeciesList) GetArea(organisms OrganismList, scale int) SpeciesGrid {
 			} else {
 				found := false
 				for speciesIndex := range species {
-					if species[speciesIndex].ID == cellSpecies.ID {
+					if species[speciesIndex].id == cellSpecies.id {
 						found = true
 						break
 					}

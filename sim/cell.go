@@ -80,12 +80,12 @@ func (c Cell) canProcreate(iteration int) bool {
 }
 
 func (c *Cell) shouldProcreate(iteration int, produces []*CellType) bool {
-	return c.canProcreate(iteration) && rand.Float32() > .5 && len(produces) > 0
+	return c.canProcreate(iteration) && rand.Float32() > .8 && len(produces) > 0
 }
 
 func (c *Cell) procreate(iteration int, produces []*CellType) Cell {
 	food := c.cellType.maxSatiation / 2
-	vec := getRandomVec().Mul(float64(c.cellType.size))
+	vec := getRandomVec().Mul(4)
 	ct := produces[rand.Intn(len(produces))]
 
 	descendant := Cell{
@@ -98,7 +98,6 @@ func (c *Cell) procreate(iteration int, produces []*CellType) Cell {
 	}
 
 	c.satiation = food
-	c.bornAt = iteration
 	c.procreatedAt = iteration
 
 	return descendant
@@ -119,17 +118,13 @@ func (c Cell) shouldDie(
 		c.hp == 0 ||
 		isOutOfBounds(c.position.Add(organismPosition), env)
 
-	if mustDie {
-		return true
-	}
+	dies := mustDie || (isStarving && age > 0)
+	// if dies {
 
-	if isStarving {
-		if age > 0 {
-			return true
-		}
-	}
+	// 	fmt.Printf("%t %t %t\n", isPastLifetime, isEnvironmentTooToxic, isStarving)
+	// }
 
-	return false
+	return dies
 }
 
 func (c *Cell) die(iteration int) {
@@ -138,6 +133,9 @@ func (c *Cell) die(iteration int) {
 }
 
 // Getters
+func (c Cell) GetID() int {
+	return c.id
+}
 func (c Cell) GetPosition() r2.Point {
 	return c.position
 }
@@ -202,4 +200,32 @@ func (cl CellList) GetAliveCount() int {
 	}
 
 	return counter
+}
+
+func (cl CellList) GetCenter() r2.Point {
+	boxStart := cl[0].position
+	boxEnd := cl[0].position
+
+	for cIndex := range cl {
+		if boxStart.X > cl[cIndex].position.X {
+			boxStart.X = cl[cIndex].position.X
+		}
+		if boxStart.Y > cl[cIndex].position.Y {
+			boxStart.Y = cl[cIndex].position.Y
+		}
+
+		if boxEnd.X < cl[cIndex].position.X {
+			boxEnd.X = cl[cIndex].position.X
+		}
+		if boxEnd.Y < cl[cIndex].position.Y {
+			boxEnd.Y = cl[cIndex].position.Y
+		}
+	}
+
+	center := r2.Point{
+		X: (boxEnd.X + boxStart.X) / 2,
+		Y: (boxEnd.Y + boxStart.Y) / 2,
+	}
+
+	return center
 }

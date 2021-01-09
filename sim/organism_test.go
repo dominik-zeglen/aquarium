@@ -9,6 +9,7 @@ import (
 func TestOrganismSplitting(t *testing.T) {
 	// Given
 	o := Organism{
+		action: idle,
 		cells: CellList{{
 			id:       0,
 			position: r2.Point{0, 0},
@@ -31,6 +32,34 @@ func TestOrganismSplitting(t *testing.T) {
 	if len(os) != 1 {
 		t.Errorf("Expected 1, got %d", len(os))
 	}
+
+	smaller := os[0]
+	if len(os[0].cells) > len(o.cells) {
+		smaller = o
+	}
+
+	if len(smaller.cells) != 1 {
+		t.Errorf("Expected 1, got %d", len(smaller.cells))
+	}
+
+	if (smaller.action) != idle {
+		t.Errorf("Expected idle, got %s", smaller.action)
+	}
+
+	expectedPosition := r2.Point{X: 2, Y: 2}
+	if smaller.position != expectedPosition {
+		t.Errorf("Expected organism position at (2, 2), got (%.f, %.f)", smaller.position.X, smaller.position.Y)
+	}
+
+	cell := smaller.cells[0]
+	expectedCellPosition := r2.Point{}
+	if cell.position != expectedCellPosition {
+		t.Errorf("Expected cell position at (0, 0), got (%.f, %.f)", cell.position.X, cell.position.Y)
+	}
+
+	if cell.id != 0 {
+		t.Errorf("Expected cell ID to be 0, got %d", cell.id)
+	}
 }
 
 func TestOrganismEating(t *testing.T) {
@@ -45,7 +74,7 @@ func TestOrganismEating(t *testing.T) {
 		size:         10,
 	}
 	s := Species{
-		Produces: [][]int{{0}},
+		produces: [][]int{{0}},
 	}
 	o := Organism{
 		species: &s,
@@ -88,7 +117,7 @@ func TestOrganismDyingFromHunger(t *testing.T) {
 		TimeToDie:    2,
 	}
 	s := Species{
-		Produces: [][]int{{0}},
+		produces: [][]int{{0}},
 	}
 	o := Organism{
 		species: &s,
@@ -131,7 +160,7 @@ func TestOrganismDyingFromOutOfBounds(t *testing.T) {
 		TimeToDie:    2,
 	}
 	s := Species{
-		Produces: [][]int{{0}},
+		produces: [][]int{{0}},
 	}
 	o := Organism{
 		species: &s,
@@ -173,7 +202,7 @@ func TestOrganismDyingFromToxicity(t *testing.T) {
 		TimeToDie:    2,
 	}
 	s := Species{
-		Produces: [][]int{{0}},
+		produces: [][]int{{0}},
 	}
 	o := Organism{
 		species: &s,
@@ -213,7 +242,7 @@ func TestOrganismDyingFromAge(t *testing.T) {
 		TimeToDie:    2,
 	}
 	s := Species{
-		Produces: [][]int{{0}},
+		produces: [][]int{{0}},
 	}
 	o := Organism{
 		species: &s,
