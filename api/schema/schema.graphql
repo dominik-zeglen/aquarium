@@ -9,7 +9,7 @@ input AreaInput {
   scale: Int
 }
 
-input CellFilter {
+input OrganismFilter {
   area: AreaInput
 }
 
@@ -24,7 +24,7 @@ type IterationProcreation {
   maxHeight: Float!
   minCd: Int!
   minHeight: Float!
-  species: SpeciesConnection!
+  species: [Species!]!
 }
 
 type IterationWaste {
@@ -41,46 +41,36 @@ type Iteration {
   waste: IterationWaste!
 }
 
-type SpeciesConnection {
-  count: Int!
-  edges: [SpeciesConnectionEdge!]!
-}
-
-type SpeciesConnectionEdge {
-  node: Species!
-}
-
 type Species {
   id: Int!
-  carnivore: Int!
-  cells: CellConnection!
-  consumption: Int!
+  cellTypes: [CellType!]!
   diet: [String!]!
   emergedAt: Int!
+  name: String!
+  organisms: [Organism!]!
+}
+
+type Organism {
+  id: Int!
+  bornAt: Int!
+  cells: [Cell!]!
+  position: Point!
+  species: Species!
+}
+
+type CellType {
+  id: Int!
+  diet: [String!]!
   funghi: Int!
   herbivore: Int!
-  name: String!
-}
-
-type CellConnection {
-  count: Int!
-  edges: [CellConnectionEdge!]!
-}
-
-type CellConnectionEdge {
-  node: Cell!
 }
 
 type Cell {
   id: Int!
   alive: Boolean!
-  bornAt: Int!
-  capacity: Int!
-  food: Int!
   hp: Int!
   position: Point!
-  satiation: Int!
-  species: Species!
+  type: CellType!
 }
 
 type SpeciesGridElement {
@@ -89,11 +79,11 @@ type SpeciesGridElement {
 }
 
 type Query {
-  cell(id: Int!): Cell
-  cellList(filter: CellFilter): CellConnection!
+  organism(id: Int!): Organism
+  organismList(filter: OrganismFilter): [Organism!]!
 
   species(id: Int!): Species
-  speciesList: SpeciesConnection!
+  speciesList: [Species!]!
   speciesGrid(area: AreaInput!): [SpeciesGridElement!]!
 
   iteration: Iteration!

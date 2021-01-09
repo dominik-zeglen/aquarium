@@ -1,25 +1,29 @@
 package api
 
 import (
+	"context"
+
+	"github.com/dominik-zeglen/aquarium/middleware"
 	"github.com/dominik-zeglen/aquarium/sim"
 	"github.com/golang/geo/r2"
 )
 
 type SpeciesResolver struct {
-	species *sim.Species
-	s       *sim.Sim
+	species sim.Species
 }
 
-func CreateSpeciesResolver(species *sim.Species, sim *sim.Sim) SpeciesResolver {
-	return SpeciesResolver{species, sim}
+func createSpeciesResolverList(species sim.SpeciesList) []SpeciesResolver {
+	resolvers := make([]SpeciesResolver, len(species))
+
+	for speciesIndex := range species {
+		resolvers[speciesIndex] = SpeciesResolver{species[speciesIndex]}
+	}
+
+	return resolvers
 }
 
 func (res SpeciesResolver) ID() int32 {
-	return int32(res.species.ID)
-}
-
-func (res SpeciesResolver) Consumption() int32 {
-	return int32(res.species.GetConsumption())
+	return int32(res.species.GetID())
 }
 
 func (res SpeciesResolver) Name() string {
@@ -27,95 +31,45 @@ func (res SpeciesResolver) Name() string {
 }
 
 func (res SpeciesResolver) EmergedAt() int32 {
-	return int32(res.species.EmergedAt)
+	return int32(res.species.GetEmergedAt())
 }
 func (res SpeciesResolver) Diet() []string {
-	var diets []string
-	speciesDiets := res.species.GetDiet()
+	diets := res.species.GetDiets()
+	dietNames := make([]string, len(diets))
 
-	for _, diet := range speciesDiets {
-		diets = append(diets, diet.String())
+	for dietIndex, diet := range diets {
+		dietNames[dietIndex] = diet.String()
 	}
 
-	return diets
+	return dietNames
 }
-func (res SpeciesResolver) Carnivore() int32 {
-	return int32(res.species.Carnivore)
+func (res SpeciesResolver) Organisms(ctx context.Context) []OrganismResolver {
+	s := ctx.Value(middleware.SimContextKey).(*sim.Sim)
+	organisms := s.GetOrganisms().GetSpecies(res.species.GetID())
+
+	return createOrganismResolverList(organisms)
 }
-func (res SpeciesResolver) Herbivore() int32 {
-	return int32(res.species.Herbivore)
-}
-func (res SpeciesResolver) Funghi() int32 {
-	return int32(res.species.Funghi)
-}
-func (res SpeciesResolver) Cells() CellConnectionResolver {
-	cells := make([]sim.Cell, res.species.Count)
-	simCells := res.s.GetCells()
-
-	for _, cell := range simCells {
-		if cell.GetSpecies().ID == res.species.ID {
-			cells = append(cells, cell)
-		}
-	}
-
-	return CreateCellConnectionResolver(cells, res.s)
-}
-
-type SpeciesConnectionEdgeResolver struct {
-	species sim.Species
-	s       *sim.Sim
-}
-
-func CreateSpeciesConnectionEdgeResolver(species sim.Species, sim *sim.Sim) SpeciesConnectionEdgeResolver {
-	return SpeciesConnectionEdgeResolver{species, sim}
-}
-
-func (res SpeciesConnectionEdgeResolver) Node() SpeciesResolver {
-	return CreateSpeciesResolver(&res.species, res.s)
-}
-
-type SpeciesConnectionResolver struct {
-	species []sim.Species
-	s       *sim.Sim
-}
-
-func CreateSpeciesConnectionResolver(species []sim.Species, sim *sim.Sim) SpeciesConnectionResolver {
-	return SpeciesConnectionResolver{species, sim}
-}
-
-func (res SpeciesConnectionResolver) Count() int32 {
-	return int32(len(res.species))
-}
-
-func (res SpeciesConnectionResolver) Edges() []SpeciesConnectionEdgeResolver {
-	resolvers := make([]SpeciesConnectionEdgeResolver, len(res.species))
-
-	for speciesIndex := range res.species {
-		resolvers[speciesIndex] = CreateSpeciesConnectionEdgeResolver(res.species[speciesIndex], res.s)
-	}
-
-	return resolvers
+func (res SpeciesResolver) CellTypes() []CellTypeResolver {
+	return createCellTypeResolverList(res.species.GetTypes())
 }
 
 type SpeciesGridElementResolver struct {
 	Position r2.Point
 	species  []sim.Species
-	s        *sim.Sim
 }
 
 func CreateSpeciesGridElementResolver(
 	position r2.Point,
 	species []sim.Species,
-	sim *sim.Sim,
 ) SpeciesGridElementResolver {
-	return SpeciesGridElementResolver{position, species, sim}
+	return SpeciesGridElementResolver{position, species}
 }
 
 func (res SpeciesGridElementResolver) Species() []SpeciesResolver {
 	resolvers := make([]SpeciesResolver, len(res.species))
 
 	for speciesIndex := range res.species {
-		resolvers[speciesIndex] = CreateSpeciesResolver(&res.species[speciesIndex], res.s)
+		resolvers[speciesIndex] = SpeciesResolver{res.species[speciesIndex]}
 	}
 
 	return resolvers

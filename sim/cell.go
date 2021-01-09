@@ -9,10 +9,8 @@ import (
 type Cell struct {
 	id       int
 	position r2.Point
-	action   Action
-	target   r2.Point
 
-	species *Species
+	cellType *CellType
 
 	alive        bool
 	hp           int
@@ -24,52 +22,53 @@ type Cell struct {
 	capacity  int
 }
 
-func (c Cell) GetFood(e Environment, iteration int) int {
+func (c Cell) GetFood(e Environment, iteration int, organismHeight float64) int {
 	food := 0
-	if c.species.Herbivore > 0 {
-		food += int(float64(c.species.Herbivore) * e.getLightOnHeight(c.position.Y, iteration))
+	if c.cellType.Herbivore > 0 {
+		food += int(float64(c.cellType.Herbivore) * e.getLightOnHeight(c.position.Y+organismHeight, iteration))
 	}
-	if c.species.Funghi > 0 {
-		food += int(c.species.getProcessedWaste(e.getToxicityOnHeight(c.position.Y)))
+	if c.cellType.Funghi > 0 {
+		food += int(c.cellType.getProcessedWaste(e.getToxicityOnHeight(c.position.Y + organismHeight)))
 	}
 
 	return food
 }
 
 func (c Cell) getLeftToFull() int {
-	return c.species.maxSatiation - c.satiation
+	return c.cellType.maxSatiation - c.satiation
 }
 
 func (c Cell) shouldEat() bool {
-	return c.species.maxSatiation > c.satiation
+	return c.cellType.maxSatiation > c.satiation
 }
 
-func (c *Cell) eat(e Environment, iteration int) {
-	c.satiation -= c.species.GetConsumption()
-	food := c.GetFood(e, iteration)
+func (c *Cell) consume() int {
+	c.satiation -= c.cellType.GetConsumption()
+	return c.cellType.GetConsumption()
+}
 
+func (c *Cell) eat(food int) int {
 	if food > c.getLeftToFull() {
-		c.satiation = c.species.maxSatiation
+		c.satiation = c.cellType.maxSatiation
 		leftover := food - c.getLeftToFull()
 
-		if leftover > c.species.maxCapacity {
-			c.capacity = c.species.maxCapacity
-		} else {
-			c.capacity += leftover
-		}
+		return food - leftover
 
-	} else {
-		c.satiation += food
 	}
 
-	if c.shouldEat() {
-		if c.capacity > c.getLeftToFull() {
-			c.capacity -= c.getLeftToFull()
-			c.satiation = c.species.maxSatiation
-		} else {
-			c.satiation += c.capacity
-			c.capacity = 0
-		}
+	c.satiation += food
+	return food
+}
+
+func (c *Cell) storeFood(food int) int {
+	toStore := c.cellType.maxCapacity - c.capacity
+
+	if food > toStore {
+		c.capacity = c.cellType.maxCapacity
+		return toStore
+	} else {
+		c.capacity += food
+		return food
 	}
 }
 
@@ -77,112 +76,61 @@ func (c Cell) canProcreate(iteration int) bool {
 	if c.procreatedAt == 0 {
 		return !c.shouldEat()
 	}
-	return iteration-c.procreatedAt > int(c.species.procreationCd) && !c.shouldEat()
+	return iteration-c.procreatedAt > int(c.cellType.procreationCd) && !c.shouldEat()
 }
 
-func (c *Cell) procreate(
-	canProcreate bool,
-	iteration int,
-	lastID int,
+func (c *Cell) shouldProcreate(iteration int, produces []*CellType) bool {
+	return c.canProcreate(iteration) && rand.Float32() > .8 && len(produces) > 0
+}
+
+func (c *Cell) procreate(iteration int, produces []*CellType) Cell {
+	food := c.cellType.maxSatiation / 2
+	vec := getRandomVec().Mul(20)
+	ct := produces[rand.Intn(len(produces))]
+
+	descendant := Cell{
+		satiation: food,
+		bornAt:    iteration,
+		alive:     true,
+		position:  c.position.Add(vec),
+		cellType:  ct,
+		hp:        ct.getMaxHP(),
+	}
+
+	c.satiation = food
+	c.bornAt = iteration
+	c.procreatedAt = iteration
+
+	return descendant
+}
+
+func (c Cell) shouldDie(
 	env Environment,
-	addSpecies AddSpecies,
-) *Cell {
-
-	if canProcreate && c.canProcreate(iteration) && rand.Float32() > .7 {
-		food := c.species.maxCapacity / int(c.species.division+1)
-
-		descendant := Cell{}
-		descendant.id = lastID + 1
-		descendant.satiation = food
-		descendant.action = idle
-		descendant.bornAt = iteration
-		descendant.capacity = 0
-		descendant.procreatedAt = iteration
-		descendant.alive = true
-
-		vec := getRandomVec().Mul(float64(c.species.size))
-
-		descendant.position = c.position.Add(vec)
-		c.position = c.position.Sub(vec)
-
-		c.satiation = food
-		c.bornAt = iteration
-
-		if rand.Float32() > .99 {
-			species := c.species.mutate()
-			species.EmergedAt = iteration
-			c.species = addSpecies(species)
-		}
-
-		descendant.species = c.species
-		descendant.hp = descendant.species.getMaxHP()
-
-		return &descendant
-	}
-
-	return nil
-}
-
-func (c *Cell) move() {
-	var moveVec r2.Point
-
-	if c.action == idle {
-		moveVec = getRandomVec()
-	} else {
-		moveVec = c.
-			target.
-			Sub(c.position).
-			Normalize()
-	}
-
-	moveVec = moveVec.Mul(float64(c.species.mobility / c.species.getMass()))
-	c.position = c.position.Add(moveVec)
-}
-
-func (c Cell) shouldDie(env Environment, iteration int) bool {
-	age := iteration - c.bornAt
-	isStarving := c.satiation == 0
-	isPastLifetime := c.species.TimeToDie < age
-	isEnvironmentTooToxic := env.getToxicityOnHeight(c.position.Y) > c.species.WasteTolerance
+	iteration int,
+	organismPosition r2.Point,
+) bool {
+	age := int8(iteration - c.bornAt)
+	isStarving := c.satiation <= 0
+	isPastLifetime := c.cellType.TimeToDie < age
+	isEnvironmentTooToxic := env.getToxicityOnHeight(c.position.Y+organismPosition.Y) > c.cellType.WasteTolerance
 
 	mustDie := isPastLifetime ||
 		isEnvironmentTooToxic ||
 		c.hp == 0 ||
-		isOutOfBounds(c.position, env)
+		isOutOfBounds(c.position.Add(organismPosition), env)
 
-	if mustDie {
-		return true
-	}
+	dies := mustDie || (isStarving && age > 0)
+	// if dies {
 
-	if isStarving {
-		if age > 0 {
-			return true
-		}
-	}
+	// 	fmt.Printf("%t %t %t\n", isPastLifetime, isEnvironmentTooToxic, isStarving)
+	// }
 
-	return false
+	return dies
 }
 
-func (c *Cell) sim(
-	env Environment,
-	iteration int,
-	lastID int,
-	addSpecies AddSpecies,
-	canProcreate bool,
-) *Cell {
-	if c.alive {
-		c.eat(env, iteration)
-		c.move()
-		descendant := c.procreate(canProcreate, iteration, lastID, env, addSpecies)
-		if c.shouldDie(env, iteration) {
-			c.alive = false
-			c.diedAt = iteration
-		}
-
-		return descendant
-	}
-
-	return nil
+func (c *Cell) die(iteration int) {
+	c.alive = false
+	c.diedAt = iteration
 }
 
 // Getters
@@ -192,8 +140,8 @@ func (c Cell) GetID() int {
 func (c Cell) GetPosition() r2.Point {
 	return c.position
 }
-func (c Cell) GetSpecies() *Species {
-	return c.species
+func (c Cell) GetType() *CellType {
+	return c.cellType
 }
 func (c Cell) IsAlive() bool {
 	return c.alive
@@ -209,24 +157,6 @@ func (c Cell) GetSatiation() int {
 }
 func (c Cell) GetCapacity() int {
 	return c.capacity
-}
-
-func getRandomCell(id int, e Environment, addSpecies AddSpecies) Cell {
-	var c Cell
-	s := getRandomHerbivore()
-
-	c.species = addSpecies(s)
-
-	c.id = id
-	c.action = idle
-	c.alive = true
-	c.satiation = 20
-	c.position = r2.Point{
-		X: float64(e.width) * rand.Float64(),
-		Y: float64(e.height) * rand.Float64(),
-	}
-
-	return c
 }
 
 type CellList []Cell
@@ -271,4 +201,32 @@ func (cl CellList) GetAliveCount() int {
 	}
 
 	return counter
+}
+
+func (cl CellList) GetCenter() r2.Point {
+	boxStart := cl[0].position
+	boxEnd := cl[0].position
+
+	for cIndex := range cl {
+		if boxStart.X > cl[cIndex].position.X {
+			boxStart.X = cl[cIndex].position.X
+		}
+		if boxStart.Y > cl[cIndex].position.Y {
+			boxStart.Y = cl[cIndex].position.Y
+		}
+
+		if boxEnd.X < cl[cIndex].position.X {
+			boxEnd.X = cl[cIndex].position.X
+		}
+		if boxEnd.Y < cl[cIndex].position.Y {
+			boxEnd.Y = cl[cIndex].position.Y
+		}
+	}
+
+	center := r2.Point{
+		X: (boxEnd.X + boxStart.X) / 2,
+		Y: (boxEnd.Y + boxStart.Y) / 2,
+	}
+
+	return center
 }

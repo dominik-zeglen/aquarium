@@ -4,34 +4,25 @@ import (
 	"testing"
 )
 
-var env Environment
-
-func addSpecies(species Species) *Species {
-	return &species
-}
-
-func init() {
-	env = Environment{9, 100, 100}
-}
-
 func TestEating(t *testing.T) {
 	e := Environment{9, 100, 100}
 
 	t.Run("Simple eating by herbivore", func(t *testing.T) {
 		// Given
 		satiation := 5
-		s := Species{
+		s := CellType{
 			consumption:  10,
 			maxSatiation: 30,
 			Herbivore:    30,
 		}
 		c := Cell{
-			species:   &s,
+			cellType:  &s,
 			satiation: satiation,
 		}
 
 		// When
-		c.eat(e, 0)
+		food := c.GetFood(e, 0, 0)
+		c.eat(food)
 
 		// Then
 		if c.satiation < satiation {
@@ -46,18 +37,19 @@ func TestEating(t *testing.T) {
 	t.Run("Simple eating by funghi", func(t *testing.T) {
 		// Given
 		satiation := 5
-		s := Species{
+		s := CellType{
 			consumption:  10,
 			maxSatiation: 30,
 			Funghi:       30,
 		}
 		c := Cell{
-			species:   &s,
+			cellType:  &s,
 			satiation: satiation,
 		}
 
 		// When
-		c.eat(e, 0)
+		food := c.GetFood(e, 0, 0)
+		c.eat(food)
 
 		//Then
 		if c.satiation < satiation {
@@ -72,18 +64,19 @@ func TestEating(t *testing.T) {
 	t.Run("Simple eating by carnivore", func(t *testing.T) {
 		// Given
 		satiation := 5
-		s := Species{
+		s := CellType{
 			consumption:  10,
 			maxSatiation: 30,
 			Carnivore:    30,
 		}
 		c := Cell{
-			species:   &s,
+			cellType:  &s,
 			satiation: satiation,
 		}
 
 		// When
-		c.eat(e, 0)
+		food := c.GetFood(e, 0, 0)
+		c.eat(food)
 
 		//Then
 		if c.satiation > satiation {
@@ -96,38 +89,34 @@ func TestEating(t *testing.T) {
 	})
 }
 
-func BenchmarkEatHerbivore(b *testing.B) {
-	c := getRandomCell(0, env, addSpecies)
-
-	for i := 0; i < b.N; i++ {
-		c.eat(env, 1)
+func TestProcreation(t *testing.T) {
+	// Given
+	ct := CellType{
+		consumption:  100,
+		maxSatiation: 200,
+		size:         10,
+		TimeToDie:    2,
 	}
-}
-
-func BenchmarkEatFunghi(b *testing.B) {
-	c := getRandomCell(0, env, addSpecies)
-	c.species.Funghi = c.species.Herbivore
-	c.species.Herbivore = 0
-
-	for i := 0; i < b.N; i++ {
-		c.eat(env, 1)
+	c := Cell{
+		id:        0,
+		alive:     true,
+		bornAt:    2,
+		cellType:  &ct,
+		hp:        1,
+		satiation: 200,
 	}
-}
 
-func BenchmarkEatOmnivore(b *testing.B) {
-	c := getRandomCell(0, env, addSpecies)
-	c.species.Funghi = c.species.Herbivore
+	// When
+	child := c.procreate(10, []*CellType{&ct})
 
-	for i := 0; i < b.N; i++ {
-		c.eat(env, 1)
+	// Then
+	if !child.alive {
+		t.Error("Child is not alive")
 	}
-}
-
-func BenchmarkProcreate(b *testing.B) {
-	c := getRandomCell(0, env, addSpecies)
-	c.satiation = c.species.maxSatiation
-
-	for i := 0; i < b.N; i++ {
-		c.procreate(true, 1, 1, env, addSpecies)
+	if child.satiation <= 0 {
+		t.Error("Child is not fed")
+	}
+	if child.position.X == c.position.X {
+		t.Error("Child is spawned in the same position")
 	}
 }

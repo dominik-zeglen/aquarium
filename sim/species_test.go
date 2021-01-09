@@ -4,10 +4,37 @@ import (
 	"testing"
 )
 
-func BenchmarkMutateOnce(b *testing.B) {
-	species := getRandomHerbivore()
+func TestMutation(t *testing.T) {
+	t.Run("returns immutable", func(t *testing.T) {
+		// Given
+		ct := CellType{
+			consumption:  100,
+			maxSatiation: 200,
+			size:         10,
+			TimeToDie:    2,
+		}
+		s := Species{
+			produces: [][]int{{0}},
+			types:    []CellType{ct},
+		}
 
-	for i := 0; i < b.N; i++ {
-		species.mutateOnce()
-	}
+		// When
+		newSpecies := s.mutate()
+
+		// Then
+		if &newSpecies == &s {
+			t.Errorf("New species should be a copy, not reference")
+		}
+		if &newSpecies.produces == &s.produces {
+			t.Errorf("New species should be a copy, not reference")
+		}
+		if &newSpecies.types == &s.types {
+			t.Errorf("New species should be a copy, not reference")
+		}
+		for cellTypeIndex := range newSpecies.types {
+			if &newSpecies.types[cellTypeIndex] == &s.types[cellTypeIndex] {
+				t.Errorf("New species should be a copy, not reference")
+			}
+		}
+	})
 }
