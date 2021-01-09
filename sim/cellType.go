@@ -130,6 +130,10 @@ func (t *CellType) validate() bool {
 		t.WasteTolerance = 0
 		return false
 	}
+	if t.mobility < 0 {
+		t.mobility = 0
+		return false
+	}
 
 	return true
 }
@@ -161,47 +165,51 @@ func (t CellType) getDietPoints() int {
 	return dietPoints
 }
 
+func (t *CellType) mutateDiet() {
+	if len(t.diets) == 1 {
+		if rand.Float32() > .9 {
+			if t.hasDiet(Herbivore) {
+				t.diets = append(t.diets, Funghi)
+				t.Herbivore /= 2
+				t.Funghi = t.Herbivore
+			}
+			if t.hasDiet(Funghi) {
+				t.diets = append(t.diets, Herbivore)
+				t.Funghi /= 2
+				t.Herbivore = t.Funghi
+			}
+		} else {
+			if t.hasDiet(Herbivore) {
+				t.diets = []Diet{Funghi}
+				t.Funghi = t.Herbivore
+				t.Herbivore = 0
+			}
+			if t.hasDiet(Funghi) {
+				t.diets = []Diet{Herbivore}
+				t.Herbivore = t.Funghi
+				t.Funghi = 0
+			}
+		}
+	} else {
+		diets := []Diet{Herbivore, Funghi}
+		diet := diets[rand.Intn(len(diets))]
+		if diet == Herbivore {
+			t.Herbivore += t.Funghi
+			t.Funghi = 0
+		} else if diet == Funghi {
+			t.Funghi += t.Herbivore
+			t.Herbivore = 0
+		}
+	}
+}
+
 func (t CellType) mutate() CellType {
 	ct := t
 	ct.diets = make([]Diet, len(t.diets))
 	copy(ct.diets, t.diets)
 
 	if rand.Float32() > .9 {
-		if len(ct.diets) == 1 {
-			if rand.Float32() > .9 {
-				if ct.hasDiet(Herbivore) {
-					ct.diets = append(ct.diets, Funghi)
-					ct.Herbivore /= 2
-					ct.Funghi = ct.Herbivore
-				}
-				if ct.hasDiet(Funghi) {
-					ct.diets = append(ct.diets, Herbivore)
-					ct.Funghi /= 2
-					ct.Herbivore = ct.Funghi
-				}
-			} else {
-				if ct.hasDiet(Herbivore) {
-					ct.diets = []Diet{Funghi}
-					ct.Funghi = ct.Herbivore
-					ct.Herbivore = 0
-				}
-				if ct.hasDiet(Funghi) {
-					ct.diets = []Diet{Herbivore}
-					ct.Herbivore = ct.Funghi
-					ct.Funghi = 0
-				}
-			}
-		} else {
-			diets := []Diet{Herbivore, Funghi}
-			diet := diets[rand.Intn(len(diets))]
-			if diet == Herbivore {
-				ct.Herbivore += ct.Funghi
-				ct.Funghi = 0
-			} else if diet == Funghi {
-				ct.Funghi += ct.Herbivore
-				ct.Herbivore = 0
-			}
-		}
+		ct.mutateDiet()
 
 		mutationCount := (rand.Intn(10) + 10)
 		for i := 0; i < mutationCount; i++ {
@@ -267,8 +275,12 @@ func (t CellType) mutateOnce() CellType {
 			n.WasteTolerance += float64(value) / 4
 		}
 
-		if attr > .85 && attr < .95 {
+		if attr > .85 && attr < .9 {
 			n.maxSatiation += value
+		}
+
+		if attr > .9 && attr < .95 {
+			n.mobility += value
 		}
 
 		if attr > .95 {

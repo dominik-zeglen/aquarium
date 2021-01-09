@@ -56,6 +56,10 @@ func (s Species) GetID() int {
 	return s.id
 }
 
+func (s Species) GetEmergedAt() int {
+	return s.emergedAt
+}
+
 func (s Species) GetDiets() []Diet {
 	diets := []Diet{}
 

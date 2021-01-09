@@ -85,7 +85,7 @@ func (c *Cell) shouldProcreate(iteration int, produces []*CellType) bool {
 
 func (c *Cell) procreate(iteration int, produces []*CellType) Cell {
 	food := c.cellType.maxSatiation / 2
-	vec := getRandomVec().Mul(4)
+	vec := getRandomVec().Mul(20)
 	ct := produces[rand.Intn(len(produces))]
 
 	descendant := Cell{
@@ -98,6 +98,7 @@ func (c *Cell) procreate(iteration int, produces []*CellType) Cell {
 	}
 
 	c.satiation = food
+	c.bornAt = iteration
 	c.procreatedAt = iteration
 
 	return descendant

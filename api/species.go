@@ -31,7 +31,7 @@ func (res SpeciesResolver) Name() string {
 }
 
 func (res SpeciesResolver) EmergedAt() int32 {
-	return int32(0)
+	return int32(res.species.GetEmergedAt())
 }
 func (res SpeciesResolver) Diet() []string {
 	diets := res.species.GetDiets()
@@ -56,15 +56,13 @@ func (res SpeciesResolver) CellTypes() []CellTypeResolver {
 type SpeciesGridElementResolver struct {
 	Position r2.Point
 	species  []sim.Species
-	s        *sim.Sim
 }
 
 func CreateSpeciesGridElementResolver(
 	position r2.Point,
 	species []sim.Species,
-	sim *sim.Sim,
 ) SpeciesGridElementResolver {
-	return SpeciesGridElementResolver{position, species, sim}
+	return SpeciesGridElementResolver{position, species}
 }
 
 func (res SpeciesGridElementResolver) Species() []SpeciesResolver {

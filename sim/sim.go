@@ -3,6 +3,7 @@ package sim
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
 type Sim struct {
@@ -13,7 +14,7 @@ type Sim struct {
 	organismLastID int
 	iteration      int
 	maxCells       int
-	verbose        bool
+	debug          bool
 	lock           sync.Mutex
 }
 
@@ -140,8 +141,8 @@ func (s *Sim) Create(verbose bool) {
 	}
 
 	s.organisms = startCells
-	s.maxCells = 5e3
-	s.verbose = verbose
+	s.maxCells = 2e4
+	s.debug = verbose
 }
 
 func (s *Sim) RunStep() IterationData {
@@ -222,7 +223,7 @@ func (s *Sim) RunStep() IterationData {
 	s.cleanupSpecies()
 	data.Procreation.Species = s.species
 
-	if s.verbose || s.GetAliveCellCount() == 0 {
+	if s.debug || s.GetAliveCellCount() == 0 {
 		fmt.Printf(
 			"Iteration %6d, organisms: %5d, alive: %5d, cells: %5d, waste: %.4f %d species",
 			s.iteration,
@@ -256,7 +257,7 @@ func (s *Sim) RunLoop(data *IterationData) {
 			consecutiveNoProcreateIterations = 0
 		}
 
-		if consecutiveNoProcreateIterations > 2 {
+		if consecutiveNoProcreateIterations > 1 {
 			s.KillOldestCells()
 		}
 		s.lock.Unlock()
@@ -265,13 +266,8 @@ func (s *Sim) RunLoop(data *IterationData) {
 			break
 		}
 
-		// if iterationData.Iteration == 2 {
-		// 	break
-		// }
-
-		// if true {
-		// 	time.Sleep(time.Second)
-		// }
-
+		if iterationData.Iteration > 380 && !s.debug {
+			time.Sleep(time.Second)
+		}
 	}
 }

@@ -88,7 +88,6 @@ func (q *Query) SpeciesGrid(args SpeciesGridArgs) []SpeciesGridElementResolver {
 			resolvers = append(resolvers, CreateSpeciesGridElementResolver(
 				r2.Point{X: float64(x), Y: float64(y)},
 				grid[y][x],
-				q.s,
 			))
 		}
 	}
