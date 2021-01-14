@@ -22,7 +22,10 @@ func (s Species) copy() Species {
 	n.types = make([]CellType, len(s.types))
 
 	copy(n.produces, s.produces)
-	copy(n.types, s.types)
+
+	for typeIndex := range s.types {
+		n.types[typeIndex] = s.types[typeIndex].copy()
+	}
 
 	return n
 }
