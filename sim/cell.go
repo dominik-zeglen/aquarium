@@ -120,10 +120,6 @@ func (c Cell) shouldDie(
 		isOutOfBounds(c.position.Add(organismPosition), env)
 
 	dies := mustDie || (isStarving && age > 0)
-	// if dies {
-
-	// 	fmt.Printf("%t %t %t\n", isPastLifetime, isEnvironmentTooToxic, isStarving)
-	// }
 
 	return dies
 }
