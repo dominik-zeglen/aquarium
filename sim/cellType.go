@@ -196,17 +196,25 @@ func (t *CellType) mutateDiet() {
 		if diet == Herbivore {
 			t.Herbivore += t.Funghi
 			t.Funghi = 0
+			t.diets = []Diet{Herbivore}
 		} else if diet == Funghi {
 			t.Funghi += t.Herbivore
 			t.Herbivore = 0
+			t.diets = []Diet{Funghi}
 		}
 	}
 }
 
-func (t CellType) mutate() CellType {
+func (t CellType) copy() CellType {
 	ct := t
 	ct.diets = make([]Diet, len(t.diets))
 	copy(ct.diets, t.diets)
+
+	return ct
+}
+
+func (t CellType) mutate() CellType {
+	ct := t.copy()
 
 	if rand.Float32() > .9 {
 		ct.mutateDiet()

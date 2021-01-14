@@ -132,7 +132,7 @@ func (s *Sim) KillOldestCells() {
 func (s *Sim) Create(verbose bool) {
 	s.iteration = 0
 	s.env = Environment{4, 10000, 10000}
-	startCellCount := 200
+	startCellCount := 500
 
 	startCells := make(OrganismList, startCellCount)
 
@@ -257,7 +257,7 @@ func (s *Sim) RunLoop(data *IterationData) {
 			consecutiveNoProcreateIterations = 0
 		}
 
-		if consecutiveNoProcreateIterations > 1 {
+		if consecutiveNoProcreateIterations > 0 {
 			s.KillOldestCells()
 		}
 		s.lock.Unlock()

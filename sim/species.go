@@ -15,7 +15,7 @@ type Species struct {
 	produces [][]int
 }
 
-func (s Species) mutate() Species {
+func (s Species) copy() Species {
 	n := s
 
 	n.produces = make([][]int, len(s.produces))
@@ -23,6 +23,12 @@ func (s Species) mutate() Species {
 
 	copy(n.produces, s.produces)
 	copy(n.types, s.types)
+
+	return n
+}
+
+func (s Species) mutate() Species {
+	n := s.copy()
 
 	typeIndex := rand.Intn(len(n.types))
 	mutatedType := n.types[typeIndex].mutate()
