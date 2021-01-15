@@ -305,6 +305,21 @@ func (ol OrganismList) GetArea(start r2.Point, end r2.Point) OrganismList {
 	return organisms[:index]
 }
 
+// GetAreaCount serves as an optimisation
+func (ol OrganismList) GetAreaCount(start r2.Point, end r2.Point) int {
+	counter := 0
+
+	for _, organism := range ol {
+		position := organism.GetPosition()
+		if position.X > start.X && position.X < end.X &&
+			position.Y > start.Y && position.Y < end.Y {
+			counter++
+		}
+	}
+
+	return counter
+}
+
 func (ol OrganismList) GetAlive() OrganismList {
 	organisms := make(OrganismList, len(ol))
 

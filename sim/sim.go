@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/golang/geo/r2"
 )
 
 type Sim struct {
@@ -14,6 +16,7 @@ type Sim struct {
 	organismLastID int
 	iteration      int
 	maxCells       int
+	areaCount      int
 	debug          bool
 	lock           sync.Mutex
 }
@@ -116,6 +119,45 @@ func (s *Sim) cleanupSpecies() {
 	}
 }
 
+func (s Sim) getAreas() []bool {
+	areas := make([]bool, s.areaCount*s.areaCount+(s.areaCount-1)*(s.areaCount-1))
+	aliveOrganisms := s.organisms.GetAlive()
+
+	for areaIndex := range areas {
+		organisms := 0
+		auxArea := areaIndex >= s.areaCount*s.areaCount
+		max := s.areaCount
+
+		if auxArea {
+			max--
+		}
+
+		start := r2.Point{
+			X: float64(s.env.width / s.areaCount * (areaIndex % s.areaCount)),
+			Y: float64(s.env.height / s.areaCount * ((areaIndex / s.areaCount) % s.areaCount)),
+		}
+		end := start.Add(r2.Point{
+			X: float64(s.env.width / s.areaCount),
+			Y: float64(s.env.height / s.areaCount),
+		})
+
+		if auxArea {
+			offset := r2.Point{
+				X: float64(s.env.width / s.areaCount / 2),
+				Y: float64(s.env.height / s.areaCount / 2),
+			}
+
+			start = start.Add(offset)
+			end = end.Add(offset)
+		}
+
+		organisms = aliveOrganisms.GetAreaCount(start, end)
+		areas[areaIndex] = organisms < (s.maxCells / s.areaCount / s.areaCount)
+	}
+
+	return areas
+}
+
 func (s *Sim) KillOldestCells() {
 	for i := int8(1); s.GetAliveCellCount() >= s.maxCells; i++ {
 		for organismIndex := range s.organisms {
@@ -142,6 +184,7 @@ func (s *Sim) Create(verbose bool) {
 
 	s.organisms = startCells
 	s.maxCells = 2e4
+	s.areaCount = 10
 	s.debug = verbose
 }
 
@@ -160,7 +203,7 @@ func (s *Sim) RunStep() IterationData {
 			Waste:        s.env.toxicity,
 		},
 		Procreation: ProcreationData{
-			MinCd:     127,
+			MinCd:     s.species[0].types[0].procreationCd,
 			MinHeight: float64(s.env.height),
 		},
 	}
@@ -181,6 +224,8 @@ func (s *Sim) RunStep() IterationData {
 		}
 	}
 
+	areas := s.getAreas()
+
 	for organismIndex, organism := range s.organisms {
 		if organism.IsAlive() {
 			if data.Procreation.MaxHeight < organism.position.Y {
@@ -191,11 +236,14 @@ func (s *Sim) RunStep() IterationData {
 			}
 		}
 
+		pos := s.organisms[organismIndex].position
+		mainArea := int(pos.Y)*s.areaCount/s.env.height*s.areaCount + int(pos.X)*s.areaCount/s.env.width
+
 		descendants := s.organisms[organismIndex].sim(
 			s.env,
 			s.iteration,
 			s.addSpecies,
-			data.Procreation.CanProcreate,
+			areas[mainArea],
 		)
 
 		for dIndex := range descendants {
@@ -225,7 +273,7 @@ func (s *Sim) RunStep() IterationData {
 
 	if s.debug || s.GetAliveCellCount() == 0 {
 		fmt.Printf(
-			"Iteration %6d, organisms: %5d, alive: %5d, cells: %5d, waste: %.4f %d species",
+			"Iteration %6d, organisms: %5d, alive: %5d, cells: %5d, waste: %.4f %d species\n",
 			s.iteration,
 			len(s.organisms),
 			s.GetAliveCount(),
@@ -233,11 +281,6 @@ func (s *Sim) RunStep() IterationData {
 			s.env.toxicity,
 			len(s.GetSpecies().GetAlive()),
 		)
-		if data.Procreation.CanProcreate {
-			fmt.Printf("\n")
-		} else {
-			fmt.Print(" x\n")
-		}
 	}
 
 	return data
