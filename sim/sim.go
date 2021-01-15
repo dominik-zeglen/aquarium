@@ -322,7 +322,7 @@ func (s *Sim) RunLoop(data *IterationData) {
 			break
 		}
 
-		if iterationData.Iteration > 380 {
+		if iterationData.Iteration > 380 && !s.debug {
 			time.Sleep(time.Second)
 		}
 	}
