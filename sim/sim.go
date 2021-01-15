@@ -174,7 +174,7 @@ func (s *Sim) KillOldestCells() {
 func (s *Sim) Create(verbose bool) {
 	s.iteration = 0
 	s.env = Environment{4, 10000, 10000}
-	startCellCount := 500
+	startCellCount := 1
 
 	startCells := make(OrganismList, startCellCount)
 
@@ -238,12 +238,22 @@ func (s *Sim) RunStep() IterationData {
 
 		pos := s.organisms[organismIndex].position
 		mainArea := int(pos.Y)*s.areaCount/s.env.height*s.areaCount + int(pos.X)*s.areaCount/s.env.width
+		canProcreate := areas[mainArea]
+		xAux := (int(pos.X) % (s.env.width / s.areaCount)) > s.env.width/s.areaCount/2
+		yAux := (int(pos.Y) % (s.env.height / s.areaCount)) > s.env.height/s.areaCount/2
+		if xAux && yAux {
+			xo := int(pos.X) - s.env.width/s.areaCount/2
+			yo := int(pos.Y) - s.env.height/s.areaCount/2
+
+			auxArea := yo*s.areaCount/s.env.height*(s.areaCount-1) + xo*s.areaCount/s.env.width
+			canProcreate = canProcreate && areas[auxArea]
+		}
 
 		descendants := s.organisms[organismIndex].sim(
 			s.env,
 			s.iteration,
 			s.addSpecies,
-			areas[mainArea],
+			canProcreate,
 		)
 
 		for dIndex := range descendants {
