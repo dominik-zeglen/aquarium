@@ -187,7 +187,7 @@ func (s *Sim) Create(verbose bool) {
 
 	s.organisms = startCells
 	s.maxCells = 2e4
-	s.areaCount = 30
+	s.areaCount = 5
 	s.debug = verbose
 }
 
@@ -313,7 +313,7 @@ func (s *Sim) RunLoop(data *IterationData) {
 			consecutiveNoProcreateIterations = 0
 		}
 
-		if consecutiveNoProcreateIterations > 0 {
+		if consecutiveNoProcreateIterations > 1 {
 			s.KillOldestCells()
 		}
 		s.lock.Unlock()
