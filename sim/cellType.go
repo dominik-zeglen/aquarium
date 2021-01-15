@@ -102,8 +102,8 @@ func (t *CellType) validate() bool {
 		t.Funghi = 0
 		return false
 	}
-	if t.consumption < 3 {
-		t.consumption = 3
+	if t.consumption < 8 {
+		t.consumption = 8
 		return false
 	}
 	if t.TimeToDie > 90 {
@@ -168,13 +168,12 @@ func (t CellType) getDietPoints() int {
 func (t *CellType) mutateDiet() {
 	if len(t.diets) == 1 {
 		if rand.Float32() > .9 {
+			t.diets = []Diet{Herbivore, Funghi}
 			if t.hasDiet(Herbivore) {
-				t.diets = append(t.diets, Funghi)
 				t.Herbivore /= 2
 				t.Funghi = t.Herbivore
 			}
 			if t.hasDiet(Funghi) {
-				t.diets = append(t.diets, Herbivore)
 				t.Funghi /= 2
 				t.Herbivore = t.Funghi
 			}

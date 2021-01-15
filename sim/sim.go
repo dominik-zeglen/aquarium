@@ -19,6 +19,7 @@ type Sim struct {
 	areaCount      int
 	debug          bool
 	lock           sync.Mutex
+	speciesLock    sync.Mutex
 }
 
 func (d *IterationData) from(from IterationData) {
@@ -77,11 +78,13 @@ func (s *Sim) Unlock() {
 }
 
 func (s *Sim) addSpecies(species Species) *Species {
+	s.speciesLock.Lock()
 	species.id = s.speciesLastID
 	species.emergedAt = s.iteration
 	species.count = 1
 	s.speciesLastID++
 	s.species = append(s.species, species)
+	s.speciesLock.Unlock()
 	return &s.species[len(s.species)-1]
 }
 
@@ -174,7 +177,7 @@ func (s *Sim) KillOldestCells() {
 func (s *Sim) Create(verbose bool) {
 	s.iteration = 0
 	s.env = Environment{4, 10000, 10000}
-	startCellCount := 1
+	startCellCount := 5
 
 	startCells := make(OrganismList, startCellCount)
 
@@ -184,7 +187,7 @@ func (s *Sim) Create(verbose bool) {
 
 	s.organisms = startCells
 	s.maxCells = 2e4
-	s.areaCount = 10
+	s.areaCount = 30
 	s.debug = verbose
 }
 
@@ -319,7 +322,7 @@ func (s *Sim) RunLoop(data *IterationData) {
 			break
 		}
 
-		if iterationData.Iteration > 380 && !s.debug {
+		if iterationData.Iteration > 380 {
 			time.Sleep(time.Second)
 		}
 	}

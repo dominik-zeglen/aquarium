@@ -6,6 +6,10 @@ import (
 	"github.com/golang/geo/r2"
 )
 
+func addSpecies(s Species) *Species {
+	return &s
+}
+
 func TestOrganismSplitting(t *testing.T) {
 	// Given
 	o := Organism{
@@ -271,4 +275,62 @@ func TestOrganismDyingFromAge(t *testing.T) {
 	if result != expected {
 		t.Errorf("Expected %d, got %d", expected, result)
 	}
+}
+
+func TestOrganismMutation(t *testing.T) {
+	t.Run("creates copy of species", func(t *testing.T) {
+		// Given
+		ct := CellType{
+			consumption:  100,
+			diets:        []Diet{Funghi},
+			maxSatiation: 200,
+			size:         10,
+			TimeToDie:    2,
+		}
+		s := Species{
+			produces: [][]int{{0}},
+			types:    []CellType{ct},
+		}
+		o1 := Organism{
+			species: &s,
+			cells: CellList{{
+				id:        0,
+				alive:     true,
+				bornAt:    2,
+				cellType:  &ct,
+				hp:        1,
+				satiation: 1,
+			}},
+		}
+
+		// When
+		o1.procreate(true, 1, true)
+		os := o1.split()
+		o2 := os[0]
+		o2.mutate(addSpecies)
+		o2.species.types[0].mutateDiet()
+
+		// Then
+		if o1.species == o2.species {
+			t.Error("Does not create copy")
+		}
+
+		for ctIndex := range o1.species.types {
+			if &o1.species.types[ctIndex] == &o2.species.types[ctIndex] {
+				t.Error("Does not create copy")
+			}
+		}
+
+		if o1.cells[0].cellType == o2.cells[0].cellType {
+			t.Error("Does not create copy")
+		}
+
+		if len(o1.cells[0].cellType.diets) != 1 || o1.cells[0].cellType.diets[0] != Funghi {
+			t.Error("Does not create copy")
+		}
+
+		if o2.cells[0].cellType.diets[0] == Funghi && len(o2.cells[0].cellType.diets) == 1 {
+			t.Error("Does not create copy")
+		}
+	})
 }

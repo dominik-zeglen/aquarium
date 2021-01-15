@@ -62,6 +62,7 @@ func (o *Organism) eat(e Environment, iteration int) int {
 func (o *Organism) procreate(
 	canProcreate bool,
 	iteration int,
+	force bool,
 ) {
 	if canProcreate {
 		for cellIndex := range o.cells {
@@ -72,7 +73,7 @@ func (o *Organism) procreate(
 				producedCt[ctIndex] = &o.species.types[ctIndex]
 			}
 
-			if o.cells[cellIndex].shouldProcreate(iteration, producedCt) {
+			if o.cells[cellIndex].shouldProcreate(iteration, producedCt) || force {
 				child := o.cells[cellIndex].procreate(iteration, producedCt)
 				child.id = o.cells[len(o.cells)-1].id + 1
 				o.cells = append(o.cells, child)
@@ -82,18 +83,20 @@ func (o *Organism) procreate(
 	}
 }
 
+func (o Organism) shouldMutate() bool {
+	return rand.Float32() > .995
+}
+
 func (o *Organism) mutate(addSpecies AddSpecies) {
-	if rand.Float32() > .995 {
-		newSpecies := o.species.mutate()
-		o.species = addSpecies(newSpecies)
+	newSpecies := o.species.mutate()
+	o.species = addSpecies(newSpecies)
 
-		for cellIndex := range o.cells {
-			ctID := o.cells[cellIndex].cellType.ID
+	for cellIndex := range o.cells {
+		ctID := o.cells[cellIndex].cellType.ID
 
-			for cellTypeIndex := range o.species.types {
-				if o.species.types[cellTypeIndex].ID == ctID {
-					o.cells[cellIndex].cellType = &o.species.types[cellTypeIndex]
-				}
+		for cellTypeIndex := range o.species.types {
+			if o.species.types[cellTypeIndex].ID == ctID {
+				o.cells[cellIndex].cellType = &o.species.types[cellTypeIndex]
 			}
 		}
 	}
@@ -215,9 +218,12 @@ func (o *Organism) sim(
 	if o.IsAlive() {
 		o.eat(env, iteration)
 		o.move()
-		o.mutate(addSpecies)
 
-		o.procreate(canProcreate, iteration)
+		if o.shouldMutate() {
+			o.mutate(addSpecies)
+		}
+
+		o.procreate(canProcreate, iteration, false)
 		o.killCells(env, iteration)
 
 		if o.cells.GetAliveCount() == 0 {
