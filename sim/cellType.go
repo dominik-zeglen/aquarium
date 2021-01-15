@@ -168,21 +168,20 @@ func (t CellType) getDietPoints() int {
 func (t *CellType) mutateDiet() {
 	if len(t.diets) == 1 {
 		if rand.Float32() > .9 {
-			t.diets = []Diet{Herbivore, Funghi}
 			if t.hasDiet(Herbivore) {
 				t.Herbivore /= 2
 				t.Funghi = t.Herbivore
-			}
-			if t.hasDiet(Funghi) {
+			} else if t.hasDiet(Funghi) {
 				t.Funghi /= 2
 				t.Herbivore = t.Funghi
 			}
+			t.diets = []Diet{Herbivore, Funghi}
 		} else {
 			if t.hasDiet(Herbivore) {
 				t.diets = []Diet{Funghi}
 				t.Funghi = t.Herbivore
 				t.Herbivore = 0
-			} else {
+			} else if t.hasDiet(Funghi) {
 				t.diets = []Diet{Herbivore}
 				t.Herbivore = t.Funghi
 				t.Funghi = 0
