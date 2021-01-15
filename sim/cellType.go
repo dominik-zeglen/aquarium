@@ -182,8 +182,7 @@ func (t *CellType) mutateDiet() {
 				t.diets = []Diet{Funghi}
 				t.Funghi = t.Herbivore
 				t.Herbivore = 0
-			}
-			if t.hasDiet(Funghi) {
+			} else {
 				t.diets = []Diet{Herbivore}
 				t.Herbivore = t.Funghi
 				t.Funghi = 0

@@ -41,20 +41,24 @@ func (s Species) mutate() Species {
 }
 
 func getRandomHerbivore() Species {
+	diets := []Diet{Herbivore}
+	ct := CellType{
+		ID:             0,
+		diets:          diets,
+		maxCapacity:    rand.Intn(30),
+		size:           rand.Intn(20) + 10,
+		Herbivore:      int8(rand.Intn(20)) + 5,
+		TimeToDie:      40,
+		maxSatiation:   int(rand.Intn(100)) + 300,
+		consumption:    10,
+		procreationCd:  int8(rand.Intn(4) + 8),
+		WasteTolerance: float64(rand.Intn(16))/4 + 4,
+		mobility:       100,
+	}
+	types := []CellType{ct}
+
 	return Species{
-		types: []CellType{{
-			ID:             0,
-			diets:          []Diet{Herbivore},
-			maxCapacity:    rand.Intn(30),
-			size:           rand.Intn(20) + 10,
-			Herbivore:      int8(rand.Intn(20)) + 5,
-			TimeToDie:      40,
-			maxSatiation:   int(rand.Intn(100)) + 300,
-			consumption:    10,
-			procreationCd:  int8(rand.Intn(4) + 8),
-			WasteTolerance: float64(rand.Intn(16))/4 + 4,
-			mobility:       100,
-		}},
+		types:    types,
 		produces: [][]int{{0}},
 	}
 }

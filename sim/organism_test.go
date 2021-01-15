@@ -297,7 +297,7 @@ func TestOrganismMutation(t *testing.T) {
 				id:        0,
 				alive:     true,
 				bornAt:    2,
-				cellType:  &ct,
+				cellType:  &s.types[0],
 				hp:        1,
 				satiation: 1,
 			}},
@@ -331,6 +331,58 @@ func TestOrganismMutation(t *testing.T) {
 
 		if o2.cells[0].cellType.diets[0] == Funghi && len(o2.cells[0].cellType.diets) == 1 {
 			t.Error("Does not create copy")
+		}
+	})
+}
+
+func TestRandomOrganism(t *testing.T) {
+	t.Run("creates copy of species", func(t *testing.T) {
+		// Given
+		s := getRandomHerbivore()
+		o1 := Organism{
+			species: &s,
+			cells: CellList{{
+				id:        0,
+				alive:     true,
+				bornAt:    2,
+				cellType:  &s.types[0],
+				hp:        1,
+				satiation: 1,
+			}},
+		}
+
+		// When
+		o1.procreate(true, 1, true)
+		os := o1.split()
+		o2 := os[0]
+		o2.mutate(addSpecies)
+		o2.species.types[0].mutateDiet()
+
+		// Then
+		if o1.species == o2.species {
+			t.Error("Does not create copy")
+		}
+
+		for ctIndex := range o1.species.types {
+			if &o1.species.types[ctIndex] == &o2.species.types[ctIndex] {
+				t.Error("Does not create copy")
+			}
+		}
+
+		if o1.cells[0].cellType == o2.cells[0].cellType {
+			t.Error("Does not create copy")
+		}
+
+		if &o1.cells[0].cellType.diets == &o2.cells[0].cellType.diets {
+			t.Error("Does not create copy")
+		}
+
+		if len(o1.cells[0].cellType.diets) != 1 || o1.cells[0].cellType.diets[0] != Herbivore {
+			t.Error("Does not create copy")
+		}
+
+		if o2.cells[0].cellType.diets[0] == Herbivore && len(o2.cells[0].cellType.diets) == 1 {
+			t.Errorf("Does not create copy, %s vs %s", o1.cells[0].cellType.diets, o2.cells[0].cellType.diets)
 		}
 	})
 }
