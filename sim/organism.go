@@ -15,7 +15,8 @@ type Organism struct {
 
 	cells CellList
 
-	species *Species
+	speciesID int
+	species   *Species
 
 	bornAt int
 	diedAt int
@@ -59,6 +60,14 @@ func (o *Organism) eat(e Environment, iteration int) int {
 	return food
 }
 
+func (o *Organism) initSpecies(species []Species) {
+	for speciesIndex := range species {
+		if species[speciesIndex].id == o.speciesID {
+			o.species = &species[speciesIndex]
+		}
+	}
+}
+
 func (o *Organism) procreate(
 	canProcreate bool,
 	iteration int,
@@ -90,6 +99,7 @@ func (o Organism) shouldMutate() bool {
 func (o *Organism) mutate(addSpecies AddSpecies) {
 	newSpecies := o.species.mutate()
 	o.species = addSpecies(newSpecies)
+	o.speciesID = o.species.id
 
 	for cellIndex := range o.cells {
 		ctID := o.cells[cellIndex].cellType.ID

@@ -34,7 +34,7 @@ func (s Species) mutate() Species {
 	n := s.copy()
 
 	typeIndex := rand.Intn(len(n.types))
-	mutatedType := n.types[typeIndex].mutate()
+	mutatedType := n.types[typeIndex].copy().mutate()
 	n.types[typeIndex] = mutatedType
 
 	return n

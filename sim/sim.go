@@ -79,11 +79,13 @@ func (s *Sim) Unlock() {
 
 func (s *Sim) addSpecies(species Species) *Species {
 	s.speciesLock.Lock()
-	species.id = s.speciesLastID
-	species.emergedAt = s.iteration
-	species.count = 1
+
+	sp := species.copy()
+	sp.id = s.speciesLastID
+	sp.emergedAt = s.iteration
+	sp.count = 1
 	s.speciesLastID++
-	s.species = append(s.species, species)
+	s.species = append(s.species, sp)
 	s.speciesLock.Unlock()
 	return &s.species[len(s.species)-1]
 }
@@ -95,7 +97,9 @@ func (s *Sim) removeSpecies(id int) {
 			break
 		}
 	}
+
 	copy(s.species[i:], s.species[i+1:])
+
 	s.species = s.species[:len(s.species)-1]
 }
 
@@ -110,15 +114,21 @@ func (s *Sim) cleanupSpecies() {
 	for speciesIndex, species := range s.species {
 		count, found := specimenCount[species.id]
 
-		if !found {
+		if !found || count == 0 {
 			idsToDelete = append(idsToDelete, s.species[speciesIndex].id)
 		}
-		s.species[speciesIndex].extinct = count == 0
+		s.species[speciesIndex].extinct = false
 		s.species[speciesIndex].count = count
 	}
 
 	for _, id := range idsToDelete {
 		s.removeSpecies(id)
+	}
+
+	for organismIndex, organism := range s.organisms {
+		if organism.species.id != organism.speciesID {
+			s.organisms[organismIndex].initSpecies(s.species)
+		}
 	}
 }
 
@@ -281,7 +291,9 @@ func (s *Sim) RunStep() IterationData {
 
 	s.organisms = nextGenOrganisms[:index]
 	s.env.changeToxicity(waste)
+
 	s.cleanupSpecies()
+
 	data.Procreation.Species = s.species
 
 	if s.debug || s.GetAliveCellCount() == 0 {
@@ -322,7 +334,7 @@ func (s *Sim) RunLoop(data *IterationData) {
 			break
 		}
 
-		if iterationData.Iteration > 380 && !s.debug {
+		if iterationData.Iteration > 3800 && !s.debug {
 			time.Sleep(time.Second)
 		}
 	}

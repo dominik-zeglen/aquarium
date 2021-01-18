@@ -50,7 +50,7 @@ type SpeciesArgs struct {
 }
 
 func (q *Query) Species(args SpeciesArgs) *SpeciesResolver {
-	species := q.s.GetSpecies()
+	species := q.s.GetSpecies().GetAlive()
 	id := int(args.ID)
 
 	for _, species := range species {
