@@ -1,0 +1,27 @@
+version: "2"
+
+services:
+  api:
+    ports:
+      - 8000:8000
+    build: .
+    links:
+      - tracing
+    depends_on:
+      - tracing
+    environment:
+      - JAEGER_AGENT_HOST=jaeger
+      - PORT=8000
+      - ALLOWED_ORIGINS=*
+
+  tracing:
+    image: jaegertracing/all-in-one
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686" # Web UI
+      - "14268:14268"
+      - "9411:9411"
+    restart: unless-stopped

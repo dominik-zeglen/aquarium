@@ -9,6 +9,8 @@ import (
 	"github.com/dominik-zeglen/aquarium/api"
 	"github.com/dominik-zeglen/aquarium/middleware"
 	"github.com/dominik-zeglen/aquarium/sim"
+	"github.com/dominik-zeglen/aquarium/tracing"
+	"github.com/opentracing/opentracing-go"
 )
 
 func checkEnvVar(key string) error {
@@ -31,14 +33,25 @@ func init() {
 }
 
 func main() {
+	tracer, closer := tracing.InitJaeger()
+	opentracing.SetGlobalTracer(tracer)
+	defer closer.Close()
+
 	s := sim.Sim{}
 	s.Create(os.Getenv("DEBUG") != "")
 
 	var data sim.IterationData
-	http.Handle("/api", middleware.WithSim(middleware.WithCors(
-		strings.Split(os.Getenv("ALLOWED_ORIGINS"), ","),
-		api.InitAPI(&s, &data),
-	), &s))
+	http.Handle("/api",
+		middleware.WithTracing(
+			middleware.WithSim(
+				middleware.WithCors(
+					strings.Split(os.Getenv("ALLOWED_ORIGINS"), ","),
+					api.InitAPI(&s, &data),
+				),
+				&s,
+			),
+		),
+	)
 	go http.ListenAndServe(":"+os.Getenv("PORT"), nil)
 
 	s.RunLoop(&data)
