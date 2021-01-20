@@ -85,7 +85,7 @@ func (o *Organism) procreate(
 }
 
 func (o Organism) shouldMutate() bool {
-	return rand.Float32() > .995
+	return rand.Float32() > .999
 }
 
 func (o *Organism) mutate(addSpecies AddSpecies) {
