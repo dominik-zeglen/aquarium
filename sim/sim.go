@@ -1,11 +1,14 @@
 package sim
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/golang/geo/r2"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
 )
 
 type Sim struct {
@@ -45,16 +48,6 @@ func (s Sim) GetIteration() int {
 
 func (s Sim) GetAliveCount() int {
 	return s.organisms.GetAliveCount()
-}
-
-func (s Sim) GetAliveCellCount() int {
-	counter := 0
-	alive := s.organisms.GetAlive()
-
-	for oIndex := range alive {
-		counter += alive[oIndex].cells.GetAliveCount()
-	}
-	return counter
 }
 
 func (s Sim) GetCellCount() int {
@@ -103,7 +96,13 @@ func (s *Sim) removeSpecies(id int) {
 	s.species = s.species[:len(s.species)-1]
 }
 
-func (s *Sim) cleanupSpecies() {
+func (s *Sim) cleanupSpecies(ctx context.Context) {
+	span, spanCtx := opentracing.StartSpanFromContext(
+		ctx,
+		"cleanup-species",
+	)
+	defer span.Finish()
+
 	specimenCount := make(map[int]int, len(s.species))
 	idsToDelete := []int{}
 
@@ -125,14 +124,27 @@ func (s *Sim) cleanupSpecies() {
 		s.removeSpecies(id)
 	}
 
-	for organismIndex, organism := range s.organisms {
-		if organism.species.id != organism.speciesID {
-			s.organisms[organismIndex].initSpecies(s.species)
-		}
+	reindexSpan, _ := opentracing.StartSpanFromContext(
+		spanCtx,
+		"reindex",
+	)
+	speciesMap := make(map[int]*Species, len(s.species))
+	for speciesIndex := range s.species {
+		speciesMap[s.species[speciesIndex].id] = &s.species[speciesIndex]
 	}
+	for organismIndex, organism := range s.organisms {
+		s.organisms[organismIndex].species = speciesMap[organism.speciesID]
+	}
+	reindexSpan.Finish()
 }
 
-func (s Sim) getAreas() []bool {
+func (s Sim) getAreas(ctx context.Context) []bool {
+	span, spanCtx := opentracing.StartSpanFromContext(
+		ctx,
+		"get-areas",
+	)
+	defer span.Finish()
+
 	areas := make([]bool, s.areaCount*s.areaCount+(s.areaCount-1)*(s.areaCount-1))
 	aliveOrganisms := s.organisms.GetAlive()
 
@@ -164,24 +176,16 @@ func (s Sim) getAreas() []bool {
 			end = end.Add(offset)
 		}
 
+		countSpan, _ := opentracing.StartSpanFromContext(
+			spanCtx,
+			"count-area",
+		)
 		organisms = aliveOrganisms.GetAreaCount(start, end)
+		countSpan.Finish()
 		areas[areaIndex] = organisms < (s.maxCells / s.areaCount / s.areaCount)
 	}
 
 	return areas
-}
-
-func (s *Sim) KillOldestCells() {
-	for i := int8(1); s.GetAliveCellCount() >= s.maxCells; i++ {
-		for organismIndex := range s.organisms {
-			for cellIndex := range s.organisms[organismIndex].cells {
-				age := int8(s.iteration - s.organisms[organismIndex].cells[cellIndex].bornAt)
-				if s.organisms[organismIndex].cells[cellIndex].cellType.TimeToDie-age < i {
-					s.organisms[organismIndex].cells[cellIndex].alive = false
-				}
-			}
-		}
-	}
 }
 
 func (s *Sim) Create(verbose bool) {
@@ -201,15 +205,27 @@ func (s *Sim) Create(verbose bool) {
 	s.debug = verbose
 }
 
-func (s *Sim) RunStep() IterationData {
+func (s *Sim) RunStep(ctx context.Context) IterationData {
+	span, stepSpanCtx := opentracing.StartSpanFromContext(
+		ctx,
+		"step",
+	)
+	span.LogFields(
+		log.Int("Iteration", s.iteration),
+		log.Int("Organisms", len(s.organisms)),
+		log.Int("Species", len(s.species)),
+	)
+	defer span.Finish()
+
 	s.iteration++
 
 	nextGenOrganisms := make(OrganismList, s.maxCells*5)
 	waste := float64(0)
 
+	dataSpan, _ := opentracing.StartSpanFromContext(stepSpanCtx, "get-data")
 	data := IterationData{
 		CellCount:      len(s.organisms),
-		AliveCellCount: s.GetAliveCellCount(),
+		AliveCellCount: s.GetAliveCount(),
 		Iteration:      s.iteration,
 		Waste: WasteData{
 			MinTolerance: s.species[0].types[0].WasteTolerance,
@@ -220,6 +236,7 @@ func (s *Sim) RunStep() IterationData {
 			MinHeight: float64(s.env.height),
 		},
 	}
+	dataSpan.Finish()
 
 	data.Procreation.CanProcreate = data.AliveCellCount < s.maxCells
 	index := 0
@@ -237,8 +254,9 @@ func (s *Sim) RunStep() IterationData {
 		}
 	}
 
-	areas := s.getAreas()
+	areas := s.getAreas(stepSpanCtx)
 
+	simSpan, _ := opentracing.StartSpanFromContext(stepSpanCtx, "sim")
 	for organismIndex, organism := range s.organisms {
 		if organism.IsAlive() {
 			if data.Procreation.MaxHeight < organism.position.Y {
@@ -288,21 +306,21 @@ func (s *Sim) RunStep() IterationData {
 			}
 		}
 	}
+	simSpan.Finish()
 
 	s.organisms = nextGenOrganisms[:index]
 	s.env.changeToxicity(waste)
 
-	s.cleanupSpecies()
+	s.cleanupSpecies(stepSpanCtx)
 
 	data.Procreation.Species = s.species
 
-	if s.debug || s.GetAliveCellCount() == 0 {
+	if s.debug {
 		fmt.Printf(
-			"Iteration %6d, organisms: %5d, alive: %5d, cells: %5d, waste: %.4f %d species\n",
+			"Iteration %6d, organisms: %5d, alive: %5d, waste: %.4f %d species\n",
 			s.iteration,
 			len(s.organisms),
 			s.GetAliveCount(),
-			s.GetAliveCellCount(),
 			s.env.toxicity,
 			len(s.GetSpecies().GetAlive()),
 		)
@@ -312,29 +330,24 @@ func (s *Sim) RunStep() IterationData {
 }
 
 func (s *Sim) RunLoop(data *IterationData) {
-	consecutiveNoProcreateIterations := 0
 
 	for {
+		span := opentracing.GlobalTracer().StartSpan("loop")
+		ctx := opentracing.ContextWithSpan(context.Background(), span)
+
 		s.lock.Lock()
-		iterationData := s.RunStep()
+		iterationData := s.RunStep(ctx)
 		data.from(iterationData)
 
-		if !iterationData.Procreation.CanProcreate {
-			consecutiveNoProcreateIterations++
-		} else {
-			consecutiveNoProcreateIterations = 0
-		}
-
-		if consecutiveNoProcreateIterations > 1 {
-			s.KillOldestCells()
-		}
 		s.lock.Unlock()
 
 		if s.GetCellCount() == 0 {
 			break
 		}
 
-		if iterationData.Iteration > 3800 && !s.debug {
+		span.Finish()
+
+		if iterationData.Iteration > 380 && !s.debug {
 			time.Sleep(time.Second)
 		}
 	}

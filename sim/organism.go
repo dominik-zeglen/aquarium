@@ -60,14 +60,6 @@ func (o *Organism) eat(e Environment, iteration int) int {
 	return food
 }
 
-func (o *Organism) initSpecies(species []Species) {
-	for speciesIndex := range species {
-		if species[speciesIndex].id == o.speciesID {
-			o.species = &species[speciesIndex]
-		}
-	}
-}
-
 func (o *Organism) procreate(
 	canProcreate bool,
 	iteration int,
@@ -326,7 +318,7 @@ func (ol OrganismList) GetAreaCount(start r2.Point, end r2.Point) int {
 	counter := 0
 
 	for _, organism := range ol {
-		position := organism.GetPosition()
+		position := organism.position
 		if position.X > start.X && position.X < end.X &&
 			position.Y > start.Y && position.Y < end.Y {
 			counter++
