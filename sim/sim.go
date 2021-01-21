@@ -145,17 +145,12 @@ func (s Sim) getAreas(ctx context.Context) []bool {
 	)
 	defer span.Finish()
 
-	areas := make([]bool, s.areaCount*s.areaCount+(s.areaCount-1)*(s.areaCount-1))
+	// areas := make([]bool, s.areaCount*s.areaCount+(s.areaCount-1)*(s.areaCount-1))
+	areas := make([]bool, s.areaCount*s.areaCount)
 	aliveOrganisms := s.organisms.GetAlive()
 
 	for areaIndex := range areas {
 		organisms := 0
-		auxArea := areaIndex >= s.areaCount*s.areaCount
-		max := s.areaCount
-
-		if auxArea {
-			max--
-		}
 
 		start := r2.Point{
 			X: float64(s.env.width / s.areaCount * (areaIndex % s.areaCount)),
@@ -165,16 +160,6 @@ func (s Sim) getAreas(ctx context.Context) []bool {
 			X: float64(s.env.width / s.areaCount),
 			Y: float64(s.env.height / s.areaCount),
 		})
-
-		if auxArea {
-			offset := r2.Point{
-				X: float64(s.env.width / s.areaCount / 2),
-				Y: float64(s.env.height / s.areaCount / 2),
-			}
-
-			start = start.Add(offset)
-			end = end.Add(offset)
-		}
 
 		countSpan, _ := opentracing.StartSpanFromContext(
 			spanCtx,
@@ -267,18 +252,9 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 			}
 		}
 
-		pos := s.organisms[organismIndex].position
+		pos := fitToBoundary(s.organisms[organismIndex].position, s.env)
 		mainArea := int(pos.Y)*s.areaCount/s.env.height*s.areaCount + int(pos.X)*s.areaCount/s.env.width
 		canProcreate := areas[mainArea]
-		xAux := (int(pos.X) % (s.env.width / s.areaCount)) > s.env.width/s.areaCount/2
-		yAux := (int(pos.Y) % (s.env.height / s.areaCount)) > s.env.height/s.areaCount/2
-		if xAux && yAux {
-			xo := int(pos.X) - s.env.width/s.areaCount/2
-			yo := int(pos.Y) - s.env.height/s.areaCount/2
-
-			auxArea := yo*s.areaCount/s.env.height*(s.areaCount-1) + xo*s.areaCount/s.env.width
-			canProcreate = canProcreate && areas[auxArea]
-		}
 
 		descendants := s.organisms[organismIndex].sim(
 			s.env,

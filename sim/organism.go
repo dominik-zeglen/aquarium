@@ -1,6 +1,7 @@
 package sim
 
 import (
+	"math"
 	"math/rand"
 
 	"github.com/golang/geo/r2"
@@ -8,7 +9,7 @@ import (
 
 type Organism struct {
 	id       int
-	angle    float32
+	angle    float64
 	position r2.Point
 	action   Action
 	target   r2.Point
@@ -112,7 +113,10 @@ func (o *Organism) move() r2.Point {
 	var moveVec r2.Point
 
 	if o.action == idle {
-		moveVec = getRandomVec()
+		if rand.Float32() > .9 {
+			o.angle = getRandomAngle()
+		}
+		moveVec = getVecFromAngle(o.angle)
 	} else {
 		moveVec = o.
 			target.
@@ -203,6 +207,7 @@ func (o *Organism) split() []Organism {
 			organisms[gridIndex] = *o
 			organisms[gridIndex].cells = grid
 			organisms[gridIndex].position = o.position.Add(center)
+			organisms[gridIndex].angle = rand.Float64() * 2 * math.Pi
 		}
 
 		return organisms
@@ -284,6 +289,7 @@ func getRandomOrganism(id int, e Environment, addSpecies AddSpecies) Organism {
 	}
 
 	return Organism{
+		angle:  rand.Float64() * 2 * math.Pi,
 		cells:  CellList{c},
 		action: idle,
 		position: r2.Point{
