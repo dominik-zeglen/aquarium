@@ -78,6 +78,11 @@ type SpeciesGridElement {
   species: [Species!]!
 }
 
+type MiniMapPixel {
+  position: Point!
+  diets: [String!]!
+}
+
 type Query {
   organism(id: Int!): Organism
   organismList(filter: OrganismFilter): [Organism!]!
@@ -85,6 +90,7 @@ type Query {
   species(id: Int!): Species
   speciesList: [Species!]!
   speciesGrid(area: AreaInput!): [SpeciesGridElement!]!
+  miniMap: [MiniMapPixel!]!
 
   iteration: Iteration!
 }

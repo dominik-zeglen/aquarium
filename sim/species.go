@@ -78,7 +78,7 @@ func (s Species) GetDiets() []Diet {
 
 	for _, cellType := range s.types {
 		for _, diet := range cellType.diets {
-			if !hasDiet(diet, diets) {
+			if !HasDiet(diet, diets) {
 				diets = append(diets, diet)
 			}
 		}

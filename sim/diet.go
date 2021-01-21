@@ -11,7 +11,7 @@ func (d Diet) String() string {
 	return [...]string{"herbivore", "funghi"}[d]
 }
 
-func hasDiet(diet Diet, diets []Diet) bool {
+func HasDiet(diet Diet, diets []Diet) bool {
 	for _, sd := range diets {
 		if sd == diet {
 			return true
@@ -22,7 +22,7 @@ func hasDiet(diet Diet, diets []Diet) bool {
 }
 
 func (t CellType) hasDiet(diet Diet) bool {
-	return hasDiet(diet, t.diets)
+	return HasDiet(diet, t.diets)
 }
 
 func (s Species) hasDiet(diet Diet) bool {
