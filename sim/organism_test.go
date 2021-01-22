@@ -74,7 +74,7 @@ func TestOrganismEating(t *testing.T) {
 		Herbivore:    100,
 		diets:        []Diet{Herbivore},
 		maxCapacity:  200,
-		maxSatiation: 400,
+		maxSatiation: -50,
 		size:         10,
 	}
 	s := Species{
@@ -116,9 +116,9 @@ func TestOrganismDyingFromHunger(t *testing.T) {
 	env := Environment{0, 10, 10}
 	ct := CellType{
 		consumption:  100,
-		maxSatiation: 200,
+		maxSatiation: 150,
 		size:         10,
-		TimeToDie:    2,
+		timeToDie:    10,
 	}
 	s := Species{
 		produces: [][]int{{0}},
@@ -159,9 +159,9 @@ func TestOrganismDyingFromOutOfBounds(t *testing.T) {
 	env := Environment{0, 10, 10}
 	ct := CellType{
 		consumption:  100,
-		maxSatiation: 200,
+		maxSatiation: 150,
 		size:         10,
-		TimeToDie:    2,
+		timeToDie:    10,
 	}
 	s := Species{
 		produces: [][]int{{0}},
@@ -201,9 +201,9 @@ func TestOrganismDyingFromToxicity(t *testing.T) {
 	env := Environment{1, 10, 10}
 	ct := CellType{
 		consumption:  100,
-		maxSatiation: 200,
+		maxSatiation: 150,
 		size:         10,
-		TimeToDie:    2,
+		timeToDie:    10,
 	}
 	s := Species{
 		produces: [][]int{{0}},
@@ -241,9 +241,9 @@ func TestOrganismDyingFromAge(t *testing.T) {
 	env := Environment{0, 10, 10}
 	ct := CellType{
 		consumption:  100,
-		maxSatiation: 200,
+		maxSatiation: 150,
 		size:         10,
-		TimeToDie:    2,
+		timeToDie:    10,
 	}
 	s := Species{
 		produces: [][]int{{0}},
@@ -283,9 +283,9 @@ func TestOrganismMutation(t *testing.T) {
 		ct := CellType{
 			consumption:  100,
 			diets:        []Diet{Funghi},
-			maxSatiation: 200,
+			maxSatiation: 150,
 			size:         10,
-			TimeToDie:    2,
+			timeToDie:    10,
 		}
 		s := Species{
 			produces: [][]int{{0}},

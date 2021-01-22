@@ -35,11 +35,11 @@ func (c Cell) GetFood(e Environment, iteration int, organismHeight float64) int 
 }
 
 func (c Cell) getLeftToFull() int {
-	return c.cellType.maxSatiation - c.satiation
+	return c.cellType.GetMaxSatiation() - c.satiation
 }
 
 func (c Cell) shouldEat() bool {
-	return c.cellType.maxSatiation > c.satiation
+	return c.getLeftToFull() > 0
 }
 
 func (c *Cell) consume() int {
@@ -49,7 +49,7 @@ func (c *Cell) consume() int {
 
 func (c *Cell) eat(food int) int {
 	if food > c.getLeftToFull() {
-		c.satiation = c.cellType.maxSatiation
+		c.satiation = c.cellType.GetMaxSatiation()
 		leftover := food - c.getLeftToFull()
 
 		return food - leftover
@@ -84,7 +84,7 @@ func (c *Cell) shouldProcreate(iteration int, produces []*CellType) bool {
 }
 
 func (c *Cell) procreate(iteration int, produces []*CellType) Cell {
-	food := c.cellType.maxSatiation / 2
+	food := c.cellType.GetMaxSatiation() / 2
 	vec := getRandomVec().Mul(20)
 	ct := produces[rand.Intn(len(produces))]
 
@@ -111,7 +111,7 @@ func (c Cell) shouldDie(
 ) bool {
 	age := int8(iteration - c.bornAt)
 	isStarving := c.satiation <= 0
-	isPastLifetime := c.cellType.TimeToDie < age
+	isPastLifetime := c.cellType.GetTimeToDie() < age
 	isEnvironmentTooToxic := env.getToxicityOnHeight(c.position.Y+organismPosition.Y) > c.cellType.WasteTolerance
 
 	mustDie := isPastLifetime ||

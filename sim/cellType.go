@@ -19,7 +19,7 @@ type CellType struct {
 	Carnivore int8
 	Funghi    int8
 
-	TimeToDie      int8
+	timeToDie      int
 	WasteTolerance float64
 
 	maxSatiation int
@@ -31,6 +31,14 @@ type CellType struct {
 	procreationCd int8
 
 	mobility int
+}
+
+func (t CellType) GetMaxSatiation() int {
+	return 350 - t.maxSatiation
+}
+
+func (t CellType) GetTimeToDie() int8 {
+	return int8(t.timeToDie / 5)
 }
 
 func (t CellType) getMaxHP() int {
@@ -79,7 +87,7 @@ func (c CellType) getWasteAfterDeath() float64 {
 
 func (c CellType) GetConsumption() int {
 	return int(
-		float32(c.maxSatiation) / 20 *
+		float32(c.GetMaxSatiation()) / 20 *
 			float32(c.size) / 30 *
 			float32(c.consumption) / 10,
 	)
@@ -106,20 +114,20 @@ func (t *CellType) validate() bool {
 		t.consumption = 8
 		return false
 	}
-	if t.TimeToDie > 90 {
-		t.TimeToDie = 90
+	if t.timeToDie > 360 {
+		t.timeToDie = 360
 		return false
 	}
 	if t.procreationCd < 5 {
 		t.procreationCd = 5
 		return false
 	}
-	if t.procreationCd >= t.TimeToDie {
-		t.procreationCd = int8(t.TimeToDie) - 1
+	if t.procreationCd >= t.GetTimeToDie() {
+		t.procreationCd = int8(t.GetTimeToDie()) - 1
 		return false
 	}
-	if t.maxSatiation < 50 {
-		t.maxSatiation = 50
+	if t.maxSatiation > 250 {
+		t.maxSatiation = 250
 		return false
 	}
 	if t.size < 10 {
@@ -269,7 +277,7 @@ func (t CellType) mutateOnce() CellType {
 		}
 
 		if attr > .61 && attr < .63 {
-			n.TimeToDie += int8(value)
+			n.timeToDie += value
 		}
 
 		if attr > .63 && attr < .73 {
@@ -281,7 +289,7 @@ func (t CellType) mutateOnce() CellType {
 		}
 
 		if attr > .85 && attr < .9 {
-			n.maxSatiation += value
+			n.maxSatiation -= value
 		}
 
 		if attr > .9 && attr < .95 {
