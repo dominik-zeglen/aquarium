@@ -76,7 +76,7 @@ func (c Cell) canProcreate(iteration int) bool {
 	if c.procreatedAt == 0 {
 		return !c.shouldEat()
 	}
-	return iteration-c.procreatedAt > int(c.cellType.procreationCd) && !c.shouldEat()
+	return iteration-c.procreatedAt > int(c.cellType.GetProcreationCd()) && !c.shouldEat()
 }
 
 func (c *Cell) shouldProcreate(iteration int, produces []*CellType) bool {
@@ -112,7 +112,7 @@ func (c Cell) shouldDie(
 	age := int8(iteration - c.bornAt)
 	isStarving := c.satiation <= 0
 	isPastLifetime := c.cellType.GetTimeToDie() < age
-	isEnvironmentTooToxic := env.getToxicityOnHeight(c.position.Y+organismPosition.Y) > c.cellType.WasteTolerance
+	isEnvironmentTooToxic := env.getToxicityOnHeight(c.position.Y+organismPosition.Y) > c.cellType.GetWasteTolerance()
 
 	mustDie := isPastLifetime ||
 		isEnvironmentTooToxic ||

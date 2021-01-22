@@ -213,11 +213,11 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 		AliveCellCount: s.GetAliveCount(),
 		Iteration:      s.iteration,
 		Waste: WasteData{
-			MinTolerance: s.species[0].types[0].WasteTolerance,
+			MinTolerance: s.species[0].types[0].GetWasteTolerance(),
 			Waste:        s.env.toxicity,
 		},
 		Procreation: ProcreationData{
-			MinCd:     s.species[0].types[0].procreationCd,
+			MinCd:     s.species[0].types[0].GetProcreationCd(),
 			MinHeight: float64(s.env.height),
 		},
 	}
@@ -229,11 +229,11 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 	for _, species := range s.species {
 		if !species.extinct {
 			for tIndex := range species.types {
-				if data.Waste.MaxTolerance < species.types[tIndex].WasteTolerance {
-					data.Waste.MaxTolerance = species.types[tIndex].WasteTolerance
+				if data.Waste.MaxTolerance < species.types[tIndex].GetWasteTolerance() {
+					data.Waste.MaxTolerance = species.types[tIndex].GetWasteTolerance()
 				}
-				if data.Waste.MinTolerance > species.types[tIndex].WasteTolerance {
-					data.Waste.MinTolerance = species.types[tIndex].WasteTolerance
+				if data.Waste.MinTolerance > species.types[tIndex].GetWasteTolerance() {
+					data.Waste.MinTolerance = species.types[tIndex].GetWasteTolerance()
 				}
 			}
 		}

@@ -51,8 +51,8 @@ func getRandomHerbivore() Species {
 		timeToDie:      200,
 		maxSatiation:   0,
 		consumption:    10,
-		procreationCd:  int8(rand.Intn(4) + 8),
-		WasteTolerance: float64(rand.Intn(16))/4 + 4,
+		procreationCd:  0,
+		wasteTolerance: rand.Intn(16) + 16,
 		mobility:       100,
 	}
 	types := []CellType{ct}

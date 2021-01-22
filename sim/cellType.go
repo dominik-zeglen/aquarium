@@ -20,7 +20,7 @@ type CellType struct {
 	Funghi    int8
 
 	timeToDie      int
-	WasteTolerance float64
+	wasteTolerance int
 
 	maxSatiation int
 	consumption  int
@@ -28,9 +28,17 @@ type CellType struct {
 	maxCapacity  int
 
 	connectivity  int8
-	procreationCd int8
+	procreationCd int
 
 	mobility int
+}
+
+func (t CellType) GetProcreationCd() int8 {
+	return 10 - int8(t.procreationCd/10)
+}
+
+func (t CellType) GetWasteTolerance() float64 {
+	return float64(t.wasteTolerance) / 4
 }
 
 func (t CellType) GetMaxSatiation() int {
@@ -118,12 +126,8 @@ func (t *CellType) validate() bool {
 		t.timeToDie = 360
 		return false
 	}
-	if t.procreationCd < 5 {
-		t.procreationCd = 5
-		return false
-	}
-	if t.procreationCd >= t.GetTimeToDie() {
-		t.procreationCd = int8(t.GetTimeToDie()) - 1
+	if t.procreationCd > 50 {
+		t.procreationCd = 50
 		return false
 	}
 	if t.maxSatiation > 250 {
@@ -134,8 +138,8 @@ func (t *CellType) validate() bool {
 		t.size = 10
 		return false
 	}
-	if t.WasteTolerance < 0 {
-		t.WasteTolerance = 0
+	if t.wasteTolerance < 0 {
+		t.wasteTolerance = 0
 		return false
 	}
 	if t.mobility < 0 {
@@ -281,11 +285,11 @@ func (t CellType) mutateOnce() CellType {
 		}
 
 		if attr > .63 && attr < .73 {
-			n.procreationCd += int8(value)
+			n.procreationCd += value
 		}
 
 		if attr > .73 && attr < .85 {
-			n.WasteTolerance += float64(value) / 4
+			n.wasteTolerance += value
 		}
 
 		if attr > .85 && attr < .9 {
