@@ -308,7 +308,8 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 func (s *Sim) RunLoop(data *IterationData) {
 
 	for {
-		span := opentracing.GlobalTracer().StartSpan("loop")
+		spanName := fmt.Sprintf("loop %d", data.Iteration+1)
+		span := opentracing.GlobalTracer().StartSpan(spanName)
 		ctx := opentracing.ContextWithSpan(context.Background(), span)
 
 		s.lock.Lock()

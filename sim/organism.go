@@ -296,7 +296,8 @@ func getRandomOrganism(id int, e Environment, addSpecies AddSpecies) Organism {
 			X: float64(e.width)*rand.Float64()*.8 + float64(e.width)/10,
 			Y: float64(e.height)*rand.Float64()*.8 + float64(e.height)/10,
 		},
-		species: s,
+		species:   s,
+		speciesID: s.id,
 	}
 
 }
