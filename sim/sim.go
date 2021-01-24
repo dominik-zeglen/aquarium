@@ -150,7 +150,7 @@ func (s Sim) getAreas(ctx context.Context) []bool {
 	aliveOrganisms := s.organisms.GetAlive()
 
 	for areaIndex := range areas {
-		organisms := 0
+		cells := 0
 
 		start := r2.Point{
 			X: float64(s.env.width / s.areaCount * (areaIndex % s.areaCount)),
@@ -165,9 +165,9 @@ func (s Sim) getAreas(ctx context.Context) []bool {
 			spanCtx,
 			"count-area",
 		)
-		organisms = aliveOrganisms.GetAreaCount(start, end)
+		cells = aliveOrganisms.GetAreaCount(start, end)
 		countSpan.Finish()
-		areas[areaIndex] = organisms < (s.maxCells / s.areaCount / s.areaCount)
+		areas[areaIndex] = cells < (s.maxCells / s.areaCount / s.areaCount)
 	}
 
 	return areas
@@ -204,7 +204,7 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 
 	s.iteration++
 
-	nextGenOrganisms := make(OrganismList, s.maxCells*5)
+	nextGenOrganisms := make(OrganismList, s.maxCells*2)
 	waste := float64(0)
 
 	dataSpan, _ := opentracing.StartSpanFromContext(stepSpanCtx, "get-data")
@@ -245,7 +245,8 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 
 	areas := s.getAreas(stepSpanCtx)
 
-	simSpan, _ := opentracing.StartSpanFromContext(stepSpanCtx, "sim")
+	simSpan, simSpanCtx := opentracing.StartSpanFromContext(stepSpanCtx, "sim")
+	removedCellCounter := 0
 	for organismIndex, organism := range s.organisms {
 		if organism.IsAlive() {
 			if data.Procreation.MaxHeight < organism.position.Y {
@@ -261,6 +262,7 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 		canProcreate := areas[mainArea]
 
 		descendants := s.organisms[organismIndex].sim(
+			simSpanCtx,
 			s.env,
 			s.iteration,
 			s.addSpecies,
@@ -274,18 +276,28 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 			index++
 		}
 
+		alive := false
 		for _, cell := range s.organisms[organismIndex].cells {
 			if !cell.alive && s.iteration-cell.diedAt > 10 {
 				waste += cell.cellType.getWasteAfterDeath()
+				s.organisms[organismIndex].cells = s.organisms[organismIndex].cells.Remove(cell.id)
+				removedCellCounter++
 			} else {
 				if cell.alive {
+					alive = true
 					waste += cell.cellType.getWaste(s.env.getToxicityOnHeight(cell.position.Y))
 				}
-				nextGenOrganisms[index] = s.organisms[organismIndex]
-				index++
 			}
 		}
+
+		if alive {
+			nextGenOrganisms[index] = s.organisms[organismIndex]
+			index++
+		}
 	}
+	simSpan.LogFields(
+		log.Int("removed cells", removedCellCounter),
+	)
 	simSpan.Finish()
 
 	s.organisms = nextGenOrganisms[:index]
@@ -328,7 +340,7 @@ func (s *Sim) RunLoop(data *IterationData) {
 
 		span.Finish()
 
-		if iterationData.Iteration > 380 && !s.debug {
+		if iterationData.Iteration > 0 && !s.debug {
 			time.Sleep(time.Second)
 		}
 	}

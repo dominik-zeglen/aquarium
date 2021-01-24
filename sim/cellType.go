@@ -28,7 +28,7 @@ type CellType struct {
 	transport    int
 	maxCapacity  int
 
-	connectivity  int8
+	connects      int8
 	procreationCd int
 
 	mobility int
@@ -44,7 +44,12 @@ func (t CellType) getInvestedPoints() int {
 		t.consumption +
 		t.procreationCd +
 		t.wasteTolerance +
-		t.mobility
+		t.mobility +
+		int(t.connects)
+}
+
+func (t CellType) CanConnect() bool {
+	return t.connects >= 15
 }
 
 func (t CellType) GetMobility() int {
@@ -162,6 +167,10 @@ func (t *CellType) validate() bool {
 	}
 	if t.mobility < 0 {
 		t.mobility = 0
+		return false
+	}
+	if t.connects > 15 {
+		t.connects = 15
 		return false
 	}
 
@@ -294,8 +303,12 @@ func (t CellType) mutateOnce() CellType {
 			}
 		}
 
-		if attr > .21 && attr > .41 {
+		if attr > .21 && attr < .35 {
 			n.maxCapacity += value
+		}
+
+		if attr > .35 && attr < .41 {
+			n.connects += int8(value)
 		}
 
 		if attr > .41 && attr < .61 {

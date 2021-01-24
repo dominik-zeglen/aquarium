@@ -1,10 +1,13 @@
 package sim
 
 import (
+	"context"
 	"math"
 	"math/rand"
 
 	"github.com/golang/geo/r2"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
 )
 
 type Organism struct {
@@ -14,7 +17,8 @@ type Organism struct {
 	action   Action
 	target   r2.Point
 
-	cells CellList
+	cells      CellList
+	lastCellId int
 
 	speciesID int
 	species   *Species
@@ -67,18 +71,25 @@ func (o *Organism) procreate(
 	force bool,
 ) {
 	if canProcreate {
-		for cellIndex := range o.cells {
-			produced := o.species.produces[o.cells[cellIndex].cellType.ID]
+		for cellIndex, cell := range o.cells {
+			produced := o.species.produces[cell.cellType.ID]
 			producedCt := make([]*CellType, len(produced))
 
 			for ctIndex := range produced {
 				producedCt[ctIndex] = &o.species.types[ctIndex]
 			}
 
-			if o.cells[cellIndex].shouldProcreate(iteration, producedCt) || force {
-				child := o.cells[cellIndex].procreate(iteration, producedCt)
-				child.id = o.cells[len(o.cells)-1].id + 1
-				o.cells = append(o.cells, child)
+			if cell.shouldProcreate(iteration, producedCt) || force {
+				freeSpot := getFreeSpot(o.cells, cell, cell.cellType.CanConnect())
+
+				if freeSpot != nil {
+					child := o.cells[cellIndex].procreate(iteration, producedCt)
+					o.lastCellId++
+					child.id = o.lastCellId
+					child.position = *freeSpot
+
+					o.cells = append(o.cells, child)
+				}
 			}
 
 		}
@@ -138,8 +149,14 @@ func (o *Organism) killCells(env Environment, iteration int) {
 	}
 }
 
-func (o *Organism) split() []Organism {
+func (o *Organism) split(ctx context.Context) []Organism {
+	splitSpan, splitSpanCtx := opentracing.StartSpanFromContext(ctx, "split-grids")
+	defer splitSpan.Finish()
+
 	grids := []CellList{}
+
+	// Check if cell connects with a grid
+	createSpan, _ := opentracing.StartSpanFromContext(splitSpanCtx, "create-grids")
 	for _, cell := range o.cells {
 		found := false
 		for gridIndex, grid := range grids {
@@ -156,19 +173,27 @@ func (o *Organism) split() []Organism {
 			grids = append(grids, CellList{cell})
 		}
 	}
+	createSpan.Finish()
 
 	lastLen := len(grids)
 	do := true
 
+	// Combine grids
+	combineSpan, _ := opentracing.StartSpanFromContext(splitSpanCtx, "combine-grids")
+	steps := 0
 	for (lastLen < len(grids) || do) && len(grids) > 1 {
 		lastLen = len(grids)
 		do = false
+		steps++
 
 		for gridAIndex, gridA := range grids {
-
-			for gridBIndex, gridB := range grids {
-				found := false
-				if gridAIndex == gridBIndex {
+			found := false
+			if found {
+				break
+			}
+			for gridBIndex := gridAIndex + 1; gridBIndex < len(grids); gridBIndex++ {
+				gridB := grids[gridBIndex]
+				if found {
 					break
 				}
 
@@ -186,11 +211,16 @@ func (o *Organism) split() []Organism {
 
 				if found {
 					grids[gridAIndex] = append(grids[gridAIndex], grids[gridBIndex]...)
-					grids = append(grids[:gridBIndex], grids[:gridBIndex+1]...)
+					grids = append(grids[:gridBIndex], grids[gridBIndex+1:]...)
+					break
 				}
 			}
 		}
 	}
+	combineSpan.LogFields(
+		log.Int("steps", steps),
+	)
+	combineSpan.Finish()
 
 	if len(grids) > 1 {
 		organisms := make(OrganismList, len(grids)-1)
@@ -208,6 +238,7 @@ func (o *Organism) split() []Organism {
 			organisms[gridIndex].cells = grid
 			organisms[gridIndex].position = o.position.Add(center)
 			organisms[gridIndex].angle = rand.Float64() * 2 * math.Pi
+			organisms[gridIndex].lastCellId = len(grid) - 1
 		}
 
 		return organisms
@@ -217,6 +248,7 @@ func (o *Organism) split() []Organism {
 }
 
 func (o *Organism) sim(
+	ctx context.Context,
 	env Environment,
 	iteration int,
 	addSpecies AddSpecies,
@@ -237,7 +269,7 @@ func (o *Organism) sim(
 			o.diedAt = iteration
 		}
 
-		return o.split()
+		return o.split(ctx)
 	}
 
 	return OrganismList{}
@@ -289,6 +321,7 @@ func getRandomOrganism(id int, e Environment, addSpecies AddSpecies) Organism {
 	}
 
 	return Organism{
+		id:     id,
 		angle:  rand.Float64() * 2 * math.Pi,
 		cells:  CellList{c},
 		action: idle,
@@ -328,7 +361,7 @@ func (ol OrganismList) GetAreaCount(start r2.Point, end r2.Point) int {
 		position := organism.position
 		if position.X > start.X && position.X < end.X &&
 			position.Y > start.Y && position.Y < end.Y {
-			counter++
+			counter += len(organism.cells)
 		}
 	}
 

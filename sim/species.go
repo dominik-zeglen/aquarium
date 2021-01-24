@@ -52,6 +52,7 @@ func getRandomHerbivore() Species {
 		wasteTolerance: 16,
 		maxCapacity:    10,
 		consumption:    8,
+		connects:       15,
 		points:         70,
 	}
 

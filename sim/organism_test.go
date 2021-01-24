@@ -339,6 +339,7 @@ func TestRandomOrganism(t *testing.T) {
 	t.Run("creates copy of species", func(t *testing.T) {
 		// Given
 		s := getRandomHerbivore()
+		s.types[0].connects = 0
 		o1 := Organism{
 			species: &s,
 			cells: CellList{{

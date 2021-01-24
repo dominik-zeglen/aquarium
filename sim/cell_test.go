@@ -116,7 +116,4 @@ func TestProcreation(t *testing.T) {
 	if child.satiation <= 0 {
 		t.Error("Child is not fed")
 	}
-	if child.position.X == c.position.X {
-		t.Error("Child is spawned in the same position")
-	}
 }

@@ -21,3 +21,40 @@ func fitToBoundary(p r2.Point, env Environment) r2.Point {
 
 	return r2.Point{x, y}
 }
+
+func getFreeSpot(
+	cells CellList,
+	cell Cell,
+	canConnect bool,
+) *r2.Point {
+	dist := float64(1)
+	if !canConnect {
+		dist = 5
+	}
+
+	candidates := []r2.Point{
+		{X: 0, Y: dist},
+		{X: dist, Y: 0},
+		{X: 0, Y: -dist},
+		{X: -dist, Y: 0},
+	}
+
+	for _, candidate := range candidates {
+		newPos := cell.position.Add(candidate)
+		available := true
+
+		for _, cellToCheck := range cells {
+			if cellToCheck.position.Sub(newPos).Norm() == 0 {
+				available = false
+				break
+			}
+		}
+
+		if available {
+			return &newPos
+		}
+
+	}
+
+	return nil
+}

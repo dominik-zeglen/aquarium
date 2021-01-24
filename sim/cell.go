@@ -85,16 +85,16 @@ func (c *Cell) shouldProcreate(iteration int, produces []*CellType) bool {
 
 func (c *Cell) procreate(iteration int, produces []*CellType) Cell {
 	food := c.cellType.GetMaxSatiation() / 2
-	vec := getRandomVec().Mul(20)
+
 	ct := produces[rand.Intn(len(produces))]
 
 	descendant := Cell{
-		satiation: food,
-		bornAt:    iteration,
-		alive:     true,
-		position:  c.position.Add(vec),
-		cellType:  ct,
-		hp:        ct.getMaxHP(),
+		satiation:    food,
+		bornAt:       iteration,
+		alive:        true,
+		cellType:     ct,
+		hp:           ct.getMaxHP(),
+		procreatedAt: iteration,
 	}
 
 	c.satiation = food
@@ -225,4 +225,24 @@ func (cl CellList) GetCenter() r2.Point {
 	}
 
 	return center
+}
+
+func (cl CellList) Remove(id int) CellList {
+	newCl := make(CellList, len(cl))
+	copy(newCl, cl)
+
+	var i int
+	for i = 0; i < len(cl); i++ {
+		if cl[i].id == id {
+			break
+		}
+	}
+
+	if i == len(cl) {
+		return newCl
+	}
+
+	copy(newCl[i:], newCl[i+1:])
+
+	return newCl[:len(newCl)-1]
 }
