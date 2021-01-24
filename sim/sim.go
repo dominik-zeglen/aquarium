@@ -209,9 +209,8 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 
 	dataSpan, _ := opentracing.StartSpanFromContext(stepSpanCtx, "get-data")
 	data := IterationData{
-		CellCount:      len(s.organisms),
-		AliveCellCount: s.GetAliveCount(),
-		Iteration:      s.iteration,
+		CellCount: len(s.organisms),
+		Iteration: s.iteration,
 		Waste: WasteData{
 			MinTolerance: s.species[0].types[0].GetWasteTolerance(),
 			Waste:        s.env.toxicity,
@@ -286,6 +285,7 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 				if cell.alive {
 					alive = true
 					waste += cell.cellType.getWaste(s.env.getToxicityOnHeight(cell.position.Y))
+					data.AliveCellCount++
 				}
 			}
 		}
@@ -314,7 +314,7 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 
 	if s.debug {
 		fmt.Printf(
-			"Iteration %6d, organisms: %5d, alive: %5d, waste: %.4f %d species, %3d highest level\n",
+			"Iteration %6d, organisms: %5d, alive: %5d, waste: %.4f %d species, highest level: %3d \n",
 			s.iteration,
 			len(s.organisms),
 			s.GetAliveCount(),
