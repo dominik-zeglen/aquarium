@@ -267,7 +267,7 @@ func TestOrganismDyingFromAge(t *testing.T) {
 	}
 
 	// When
-	o.killCells(env, 3)
+	o.killCells(env, 43)
 
 	// Then
 	expected := 1
