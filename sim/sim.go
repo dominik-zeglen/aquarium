@@ -145,7 +145,6 @@ func (s Sim) getAreas(ctx context.Context) []bool {
 	)
 	defer span.Finish()
 
-	// areas := make([]bool, s.areaCount*s.areaCount+(s.areaCount-1)*(s.areaCount-1))
 	areas := make([]bool, s.areaCount*s.areaCount)
 	aliveOrganisms := s.organisms.GetAlive()
 
