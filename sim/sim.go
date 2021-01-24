@@ -277,17 +277,22 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 		}
 
 		alive := false
-		for _, cell := range s.organisms[organismIndex].cells {
+		removeMap := map[int]bool{}
+		for cellIndex, cell := range organism.cells {
 			if !cell.alive && s.iteration-cell.diedAt > 10 {
 				waste += cell.cellType.getWasteAfterDeath()
-				s.organisms[organismIndex].cells = s.organisms[organismIndex].cells.Remove(cell.id)
-				removedCellCounter++
+				removeMap[cellIndex] = true
 			} else {
 				if cell.alive {
 					alive = true
 					waste += cell.cellType.getWaste(s.env.getToxicityOnHeight(cell.position.Y))
 				}
 			}
+		}
+
+		if len(removeMap) > 0 {
+			removedCellCounter += len(removeMap)
+			s.organisms[organismIndex].cells = organism.cells.Remove(removeMap)
 		}
 
 		if alive {
@@ -340,7 +345,7 @@ func (s *Sim) RunLoop(data *IterationData) {
 
 		span.Finish()
 
-		if iterationData.Iteration > 0 && !s.debug {
+		if iterationData.Iteration > 600 && !s.debug {
 			time.Sleep(time.Second)
 		}
 	}

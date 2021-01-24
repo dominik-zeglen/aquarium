@@ -80,7 +80,7 @@ func (c Cell) canProcreate(iteration int) bool {
 }
 
 func (c *Cell) shouldProcreate(iteration int, produces []*CellType) bool {
-	return c.canProcreate(iteration) && rand.Float32() > .8 && len(produces) > 0
+	return c.canProcreate(iteration) && rand.Float32() > .5 && len(produces) > 0
 }
 
 func (c *Cell) procreate(iteration int, produces []*CellType) Cell {
@@ -104,12 +104,16 @@ func (c *Cell) procreate(iteration int, produces []*CellType) Cell {
 	return descendant
 }
 
+func (c Cell) getAge(iteration int) int8 {
+	return int8(iteration - c.bornAt)
+}
+
 func (c Cell) shouldDie(
 	env Environment,
 	iteration int,
 	organismPosition r2.Point,
 ) bool {
-	age := int8(iteration - c.bornAt)
+	age := c.getAge(iteration)
 	isStarving := c.satiation <= 0
 	isPastLifetime := c.cellType.GetTimeToDie() < age
 	isEnvironmentTooToxic := env.getToxicityOnHeight(c.position.Y+organismPosition.Y) > c.cellType.GetWasteTolerance()
@@ -227,22 +231,16 @@ func (cl CellList) GetCenter() r2.Point {
 	return center
 }
 
-func (cl CellList) Remove(id int) CellList {
-	newCl := make(CellList, len(cl))
-	copy(newCl, cl)
+func (cl CellList) Remove(removeMap map[int]bool) CellList {
+	cells := make(CellList, len(cl))
+	index := 0
 
-	var i int
-	for i = 0; i < len(cl); i++ {
-		if cl[i].id == id {
-			break
+	for cellIndex := range cl {
+		if !removeMap[cellIndex] {
+			cells[index] = cl[cellIndex]
+			index++
 		}
 	}
 
-	if i == len(cl) {
-		return newCl
-	}
-
-	copy(newCl[i:], newCl[i+1:])
-
-	return newCl[:len(newCl)-1]
+	return cells[:index]
 }

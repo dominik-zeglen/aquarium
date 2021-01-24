@@ -70,7 +70,7 @@ func (o *Organism) procreate(
 	iteration int,
 	force bool,
 ) {
-	if canProcreate {
+	if canProcreate && len(o.cells.GetAlive()) < 25 {
 		for cellIndex, cell := range o.cells {
 			produced := o.species.produces[cell.cellType.ID]
 			producedCt := make([]*CellType, len(produced))
