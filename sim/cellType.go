@@ -266,7 +266,7 @@ func (t CellType) mutateOnce() CellType {
 	n := t
 	do := true
 
-	for do || !n.validate() || t.getInvestedPoints() < t.points {
+	for do || !n.validate() || n.getInvestedPoints() < n.points {
 		attr := rand.Float64()
 		value := 1
 		if rand.Float32() > .9 {

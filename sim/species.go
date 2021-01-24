@@ -33,6 +33,7 @@ func (s Species) copy() Species {
 
 func (s Species) mutate() Species {
 	n := s.copy()
+	n.points++
 
 	typeIndex := rand.Intn(len(n.types))
 	mutatedType := n.types[typeIndex].copy().mutate()
@@ -54,7 +55,7 @@ func getRandomHerbivore() Species {
 		points:         70,
 	}
 
-	for ct.points < ct.getInvestedPoints() {
+	for ct.points > ct.getInvestedPoints() {
 		ct = ct.mutateOnce()
 	}
 
