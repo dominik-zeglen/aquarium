@@ -33,9 +33,11 @@ func init() {
 }
 
 func main() {
-	tracer, closer := tracing.InitJaeger()
-	opentracing.SetGlobalTracer(tracer)
-	defer closer.Close()
+	if os.Getenv("JAEGER_AGENT_HOST") != "" {
+		tracer, closer := tracing.InitJaeger()
+		opentracing.SetGlobalTracer(tracer)
+		defer closer.Close()
+	}
 
 	s := sim.Sim{}
 	s.Create(os.Getenv("DEBUG") != "")

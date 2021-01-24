@@ -7,8 +7,9 @@ import (
 type CellType struct {
 	ID int
 
-	shape string
-	diets []Diet
+	shape  string
+	diets  []Diet
+	points int
 
 	size int
 
@@ -33,6 +34,23 @@ type CellType struct {
 	mobility int
 }
 
+func (t CellType) getInvestedPoints() int {
+	return t.maxCapacity +
+		t.size +
+		int(t.Herbivore) +
+		int(t.Funghi) +
+		t.timeToDie +
+		t.maxSatiation +
+		t.consumption +
+		t.procreationCd +
+		t.wasteTolerance +
+		t.mobility
+}
+
+func (t CellType) GetMobility() int {
+	return t.mobility * 5
+}
+
 func (t CellType) GetProcreationCd() int8 {
 	return 10 - int8(t.procreationCd/10)
 }
@@ -46,7 +64,7 @@ func (t CellType) GetMaxSatiation() int {
 }
 
 func (t CellType) GetTimeToDie() int8 {
-	return int8(t.timeToDie / 5)
+	return 40 + int8(t.timeToDie/5)
 }
 
 func (t CellType) getMaxHP() int {
@@ -122,8 +140,8 @@ func (t *CellType) validate() bool {
 		t.consumption = 8
 		return false
 	}
-	if t.timeToDie > 360 {
-		t.timeToDie = 360
+	if t.timeToDie > 600 {
+		t.timeToDie = 600
 		return false
 	}
 	if t.procreationCd > 50 {
@@ -224,6 +242,7 @@ func (t CellType) copy() CellType {
 
 func (t CellType) mutate() CellType {
 	ct := t.copy()
+	ct.points++
 
 	if rand.Float32() > .9 {
 		ct.mutateDiet()
@@ -247,9 +266,12 @@ func (t CellType) mutateOnce() CellType {
 	n := t
 	do := true
 
-	for do || !n.validate() {
+	for do || !n.validate() || t.getInvestedPoints() < t.points {
 		attr := rand.Float64()
-		value := rand.Intn(2)*2 - 1
+		value := 1
+		if rand.Float32() > .9 {
+			value = -1
+		}
 
 		for attr < .21 && n.getDietPoints() >= 100 && value > 0 {
 			attr = rand.Float64()
@@ -258,16 +280,16 @@ func (t CellType) mutateOnce() CellType {
 		if attr < .21 {
 			if len(t.diets) > 1 {
 				if rand.Float32() > .5 {
-					n.Herbivore += int8(value * 4)
+					n.Herbivore += int8(value)
 				} else {
-					n.Funghi += int8(value * 4)
+					n.Funghi += int8(value)
 				}
 			} else {
 				if t.hasDiet(Herbivore) {
-					n.Herbivore += int8(value * 4)
+					n.Herbivore += int8(value)
 				}
 				if t.hasDiet(Funghi) {
-					n.Funghi += int8(value * 4)
+					n.Funghi += int8(value)
 				}
 			}
 		}

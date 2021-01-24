@@ -176,7 +176,7 @@ func (s Sim) getAreas(ctx context.Context) []bool {
 func (s *Sim) Create(verbose bool) {
 	s.iteration = 0
 	s.env = Environment{4, 10000, 10000}
-	startCellCount := 5
+	startCellCount := 25
 
 	startCells := make(OrganismList, startCellCount)
 
@@ -225,6 +225,7 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 
 	data.Procreation.CanProcreate = data.AliveCellCount < s.maxCells
 	index := 0
+	highestPoints := 70
 
 	for _, species := range s.species {
 		if !species.extinct {
@@ -234,6 +235,9 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 				}
 				if data.Waste.MinTolerance > species.types[tIndex].GetWasteTolerance() {
 					data.Waste.MinTolerance = species.types[tIndex].GetWasteTolerance()
+				}
+				if highestPoints < species.points {
+					highestPoints = species.points
 				}
 			}
 		}
@@ -293,12 +297,13 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 
 	if s.debug {
 		fmt.Printf(
-			"Iteration %6d, organisms: %5d, alive: %5d, waste: %.4f %d species\n",
+			"Iteration %6d, organisms: %5d, alive: %5d, waste: %.4f %d species, %3d highest level\n",
 			s.iteration,
 			len(s.organisms),
 			s.GetAliveCount(),
 			s.env.toxicity,
 			len(s.GetSpecies().GetAlive()),
+			highestPoints-69,
 		)
 	}
 

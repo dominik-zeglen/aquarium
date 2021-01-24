@@ -256,7 +256,7 @@ func (o Organism) GetMass() int {
 func (o Organism) GetMobility() int {
 	mobility := 0
 	for cellIndex := range o.cells {
-		mobility += o.cells[cellIndex].cellType.mobility
+		mobility += o.cells[cellIndex].cellType.GetMobility()
 	}
 
 	return mobility

@@ -10,6 +10,7 @@ type Species struct {
 	emergedAt int
 	extinct   bool
 	count     int
+	points    int
 
 	types    []CellType
 	produces [][]int
@@ -45,21 +46,24 @@ func getRandomHerbivore() Species {
 	ct := CellType{
 		ID:             0,
 		diets:          diets,
-		maxCapacity:    rand.Intn(30),
-		size:           rand.Intn(20) + 10,
-		Herbivore:      int8(rand.Intn(20)) + 5,
-		timeToDie:      200,
-		maxSatiation:   0,
-		consumption:    10,
-		procreationCd:  0,
-		wasteTolerance: rand.Intn(16) + 16,
-		mobility:       100,
+		size:           10,
+		Herbivore:      10,
+		wasteTolerance: 16,
+		maxCapacity:    10,
+		consumption:    8,
+		points:         70,
 	}
+
+	for ct.points < ct.getInvestedPoints() {
+		ct = ct.mutateOnce()
+	}
+
 	types := []CellType{ct}
 
 	return Species{
 		types:    types,
 		produces: [][]int{{0}},
+		points:   70,
 	}
 }
 
