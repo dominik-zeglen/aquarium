@@ -48,6 +48,10 @@ func (t CellType) getInvestedPoints() int {
 		int(t.connects)
 }
 
+func (t CellType) GetSize() int {
+	return t.size + 10
+}
+
 func (t CellType) CanConnect() bool {
 	return t.connects >= 15
 }
@@ -73,15 +77,15 @@ func (t CellType) GetTimeToDie() int8 {
 }
 
 func (t CellType) getMaxHP() int {
-	return t.size * 23
+	return t.GetSize() * 23
 }
 
 func (t CellType) getMass() int {
-	return t.size * 10
+	return t.GetSize() * 10
 }
 
 func (t CellType) getFoodValue() int {
-	return t.size * 2
+	return t.GetSize() * 2
 }
 
 func (t CellType) getDefence() int {
@@ -89,7 +93,7 @@ func (t CellType) getDefence() int {
 }
 
 func (t CellType) getAttack() int {
-	return (int(t.Carnivore)*2 + t.size + t.enzymes) / 3
+	return (int(t.Carnivore)*2 + t.GetSize() + t.enzymes) / 3
 }
 
 func (t CellType) getProcessedWaste(toxicity float64) float64 {
@@ -104,7 +108,7 @@ func (t CellType) getProcessedWaste(toxicity float64) float64 {
 }
 
 func (t CellType) getWaste(toxicity float64) float64 {
-	waste := float64(t.size)
+	waste := float64(t.GetSize())
 	if (toxicity) > 0 {
 		waste -= t.getProcessedWaste(toxicity)
 	}
@@ -113,13 +117,13 @@ func (t CellType) getWaste(toxicity float64) float64 {
 }
 
 func (c CellType) getWasteAfterDeath() float64 {
-	return (float64(c.size)) / 6e8
+	return (float64(c.GetSize())) / 6e8
 }
 
 func (c CellType) GetConsumption() int {
 	return int(
 		float32(c.GetMaxSatiation()) / 20 *
-			float32(c.size) / 30 *
+			float32(c.GetSize()) / 30 *
 			float32(c.consumption) / 10,
 	)
 }
@@ -157,8 +161,8 @@ func (t *CellType) validate() bool {
 		t.maxSatiation = 250
 		return false
 	}
-	if t.size < 10 {
-		t.size = 10
+	if t.size < -3 {
+		t.size = -3
 		return false
 	}
 	if t.wasteTolerance < 0 {

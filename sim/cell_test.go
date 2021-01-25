@@ -94,7 +94,6 @@ func TestProcreation(t *testing.T) {
 	ct := CellType{
 		consumption:  100,
 		maxSatiation: 150,
-		size:         10,
 		timeToDie:    10,
 	}
 	c := Cell{

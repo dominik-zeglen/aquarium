@@ -16,6 +16,8 @@ type Species struct {
 	produces [][]int
 }
 
+const startingPoints = 70
+
 func (s Species) copy() Species {
 	n := s
 
@@ -31,13 +33,26 @@ func (s Species) copy() Species {
 	return n
 }
 
+func (s Species) getMaxTypes() int {
+	return (s.points-startingPoints)/30 + 1
+}
+
 func (s Species) mutate() Species {
 	n := s.copy()
 	n.points++
 
-	typeIndex := rand.Intn(len(n.types))
+	typeCount := len(n.types)
+	typeIndex := rand.Intn(typeCount)
 	mutatedType := n.types[typeIndex].copy().mutate()
 	n.types[typeIndex] = mutatedType
+
+	if s.getMaxTypes() > len(s.types) {
+		ct := s.types[typeCount-1].copy()
+
+		n.types = append(n.types, ct)
+		prod := n.produces[typeCount-1]
+		n.produces[typeCount-1] = append(prod, typeCount)
+	}
 
 	return n
 }
@@ -47,13 +62,11 @@ func getRandomHerbivore() Species {
 	ct := CellType{
 		ID:             0,
 		diets:          diets,
-		size:           10,
 		Herbivore:      10,
 		wasteTolerance: 16,
 		mobility:       10,
-		consumption:    8,
-		connects:       15,
-		points:         70,
+		consumption:    10,
+		points:         startingPoints,
 	}
 
 	for ct.points > ct.getInvestedPoints() {
@@ -65,7 +78,7 @@ func getRandomHerbivore() Species {
 	return Species{
 		types:    types,
 		produces: [][]int{{0}},
-		points:   70,
+		points:   startingPoints,
 	}
 }
 
