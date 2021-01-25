@@ -52,6 +52,7 @@ func (s Species) mutate() Species {
 		n.types = append(n.types, ct)
 		prod := n.produces[typeCount-1]
 		n.produces[typeCount-1] = append(prod, typeCount)
+		n.produces = append(n.produces, []int{})
 	}
 
 	return n
