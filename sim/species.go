@@ -34,6 +34,10 @@ func (s Species) copy() Species {
 }
 
 func (s Species) getMaxTypes() int {
+	if !s.types[len(s.types)-1].CanConnect() {
+		return len(s.types)
+	}
+
 	return (s.points-startingPoints)/30 + 1
 }
 
