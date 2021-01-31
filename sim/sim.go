@@ -11,18 +11,29 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 )
 
+type SimConfig struct {
+	EnvDivisions       int
+	MaxCellsInOrganism int
+	MaxCellsInSim      int
+	StartCells         int
+	Verbose            bool
+	WarmupIterations   int
+}
+
 type Sim struct {
-	organisms      OrganismList
-	species        SpeciesList
-	env            Environment
-	speciesLastID  int
-	organismLastID int
-	iteration      int
-	maxCells       int
-	areaCount      int
-	debug          bool
-	lock           sync.Mutex
-	speciesLock    sync.Mutex
+	areaCount          int
+	env                Environment
+	iteration          int
+	lock               sync.Mutex
+	maxCells           int
+	maxCellsInOrganism int
+	organismLastID     int
+	organisms          OrganismList
+	species            SpeciesList
+	speciesLastID      int
+	speciesLock        sync.Mutex
+	verbose            bool
+	warmupIterations   int
 }
 
 func (d *IterationData) from(from IterationData) {
@@ -188,21 +199,22 @@ func (s Sim) getAreas(ctx context.Context) []bool {
 	return areas
 }
 
-func (s *Sim) Create(verbose bool) {
+func (s *Sim) Create(config SimConfig) {
 	s.iteration = 0
 	s.env = Environment{4, 10000, 10000}
-	startCellCount := 5
 
-	startCells := make(OrganismList, startCellCount)
+	startCells := make(OrganismList, config.StartCells)
 
-	for i := 0; i < startCellCount; i++ {
+	for i := 0; i < config.StartCells; i++ {
 		startCells[i] = getRandomOrganism(i, s.env, s.addSpecies)
 	}
 
 	s.organisms = startCells
-	s.maxCells = 2e4
-	s.areaCount = 5
-	s.debug = verbose
+	s.maxCells = config.MaxCellsInSim
+	s.areaCount = config.EnvDivisions
+	s.verbose = config.Verbose
+	s.warmupIterations = config.WarmupIterations
+	s.maxCellsInOrganism = config.MaxCellsInOrganism
 }
 
 func (s *Sim) RunStep(ctx context.Context) IterationData {
@@ -288,6 +300,7 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 			simSpanCtx,
 			s.env,
 			s.iteration,
+			s.maxCellsInOrganism,
 			s.addSpecies,
 			canProcreate,
 		)
@@ -336,15 +349,15 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 
 	data.Procreation.Species = s.species
 
-	if s.debug {
+	if s.verbose {
 		fmt.Printf(
-			"Iteration %6d, organisms: %5d, alive: %5d, waste: %.4f %d species, highest level: %3d \n",
+			"Iteration %6d, organisms: %5d, alive: %5d, waste: %.4f species: %4d, highest level: %3d \n",
 			s.iteration,
 			len(s.organisms),
 			s.GetAliveCount(),
 			s.env.toxicity,
 			len(s.GetSpecies().GetAlive()),
-			highestPoints-69,
+			highestPoints-startingPoints+1,
 		)
 	}
 
@@ -369,7 +382,7 @@ func (s *Sim) RunLoop(data *IterationData) {
 
 		span.Finish()
 
-		if iterationData.Iteration > 600 && !s.debug {
+		if iterationData.Iteration > s.warmupIterations {
 			time.Sleep(time.Second)
 		}
 	}
