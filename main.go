@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -13,6 +14,53 @@ import (
 	"github.com/opentracing/opentracing-go"
 )
 
+var maxCellsInSim = flag.Int(
+	"mc",
+	2e4,
+	"Maximum cells in the whole sim",
+)
+var verbose = flag.Bool(
+	"v",
+	false,
+	"Enable verbose mode",
+)
+var maxCellsInOrganism = flag.Int(
+	"mo",
+	25,
+	"Maximum cells in one organism",
+)
+var envDivisions = flag.Int(
+	"d",
+	4,
+	"Divide environment along and across by this number",
+)
+var warmupIterations = flag.Int(
+	"w",
+	600,
+	"Do not pause sim until number of this iterations has been reached",
+)
+var startCells = flag.Int(
+	"s",
+	10,
+	"Number of cells created at the start of the sim",
+)
+var trace = flag.Bool(
+	"t",
+	false,
+	"Enable tracing",
+)
+
+func getConfig() sim.SimConfig {
+	return sim.SimConfig{
+		EnvDivisions:       *envDivisions,
+		MaxCellsInOrganism: *maxCellsInOrganism,
+		MaxCellsInSim:      *maxCellsInSim,
+		StartCells:         *startCells,
+		Verbose:            *verbose,
+		WarmupIterations:   *warmupIterations,
+	}
+}
+
 func checkEnvVar(key string) error {
 	if os.Getenv(key) == "" {
 		return fmt.Errorf("Environment variable %s not set", key)
@@ -22,6 +70,7 @@ func checkEnvVar(key string) error {
 }
 
 func init() {
+	flag.Parse()
 	envVars := []string{"ALLOWED_ORIGINS", "PORT"}
 
 	for _, envVar := range envVars {
@@ -33,14 +82,15 @@ func init() {
 }
 
 func main() {
-	if os.Getenv("JAEGER_AGENT_HOST") != "" {
+	if os.Getenv("JAEGER_AGENT_HOST") != "" && *trace {
 		tracer, closer := tracing.InitJaeger()
 		opentracing.SetGlobalTracer(tracer)
 		defer closer.Close()
 	}
 
 	s := sim.Sim{}
-	s.Create(os.Getenv("DEBUG") != "")
+	config := getConfig()
+	s.Create(config)
 
 	var data sim.IterationData
 	http.Handle("/api",

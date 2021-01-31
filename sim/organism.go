@@ -68,9 +68,10 @@ func (o *Organism) eat(e Environment, iteration int) int {
 func (o *Organism) procreate(
 	canProcreate bool,
 	iteration int,
+	maxCells int,
 	force bool,
 ) {
-	if canProcreate && len(o.cells.GetAlive()) < 25 {
+	if canProcreate && len(o.cells.GetAlive()) < maxCells {
 		for cellIndex, cell := range o.cells {
 			produced := o.species.produces[cell.cellType.ID]
 			producedCt := make([]*CellType, len(produced))
@@ -251,6 +252,7 @@ func (o *Organism) sim(
 	ctx context.Context,
 	env Environment,
 	iteration int,
+	maxCells int,
 	addSpecies AddSpecies,
 	canProcreate bool,
 ) OrganismList {
@@ -262,7 +264,7 @@ func (o *Organism) sim(
 			o.mutate(addSpecies)
 		}
 
-		o.procreate(canProcreate, iteration, false)
+		o.procreate(canProcreate, iteration, maxCells, false)
 		o.killCells(env, iteration)
 
 		if o.cells.GetAliveCount() == 0 {
