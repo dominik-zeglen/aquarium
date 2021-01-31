@@ -219,7 +219,7 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 
 	s.iteration++
 
-	nextGenOrganisms := make(OrganismList, s.maxCells*2)
+	nextGenOrganisms := make(OrganismList, s.maxCells*5)
 	waste := float64(0)
 
 	dataSpan, _ := opentracing.StartSpanFromContext(stepSpanCtx, "get-data")
