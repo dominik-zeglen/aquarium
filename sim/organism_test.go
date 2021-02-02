@@ -387,3 +387,63 @@ func TestRandomOrganism(t *testing.T) {
 		}
 	})
 }
+
+func TestOrganismProcreation(t *testing.T) {
+	t.Run("can produce more than 1 cell type", func(t *testing.T) {
+		// Given
+		cts := []CellType{
+			{
+				ID:           0,
+				consumption:  100,
+				diets:        []Diet{Funghi},
+				maxSatiation: 150,
+				timeToDie:    10,
+			},
+			{
+				ID:           1,
+				consumption:  100,
+				diets:        []Diet{Herbivore},
+				maxSatiation: 150,
+				timeToDie:    10,
+			},
+		}
+		s := Species{
+			produces: [][]int{{0, 1}, {}},
+			types:    cts,
+		}
+		o := Organism{
+			species: &s,
+			cells: CellList{{
+				id:        0,
+				alive:     true,
+				cellType:  &cts[0],
+				hp:        1,
+				satiation: 0,
+			}, {
+				id:        1,
+				alive:     true,
+				cellType:  &cts[0],
+				hp:        1,
+				satiation: 200,
+			}},
+		}
+
+		// When
+		for i := 0; i < 50; i++ {
+			o.procreate(true, 0, 50, true)
+		}
+
+		// Then
+		found := false
+		for _, cell := range o.cells {
+			if cell.cellType.ID == 1 {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			t.Error("Organism did not produce any type 1 cell")
+		}
+	})
+}

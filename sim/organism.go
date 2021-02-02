@@ -80,7 +80,7 @@ func (o *Organism) procreate(
 				producedCt[ctIndex] = &o.species.types[ctIndex]
 			}
 
-			if cell.shouldProcreate(iteration, producedCt) || force {
+			if (cell.shouldProcreate(iteration) || force) && len(producedCt) > 0 {
 				freeSpot := getFreeSpot(o.cells, cell, cell.cellType.CanConnect())
 
 				if freeSpot != nil {

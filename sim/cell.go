@@ -79,8 +79,8 @@ func (c Cell) canProcreate(iteration int) bool {
 	return iteration-c.procreatedAt > int(c.cellType.GetProcreationCd()) && !c.shouldEat()
 }
 
-func (c *Cell) shouldProcreate(iteration int, produces []*CellType) bool {
-	return c.canProcreate(iteration) && rand.Float32() > .5 && len(produces) > 0
+func (c *Cell) shouldProcreate(iteration int) bool {
+	return c.canProcreate(iteration) && rand.Float32() > .5
 }
 
 func (c *Cell) procreate(iteration int, produces []*CellType) Cell {
