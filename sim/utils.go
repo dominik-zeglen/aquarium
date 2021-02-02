@@ -1,6 +1,10 @@
 package sim
 
-import "github.com/golang/geo/r2"
+import (
+	"sort"
+
+	"github.com/golang/geo/r2"
+)
 
 func fitToBoundary(p r2.Point, env Environment) r2.Point {
 	x := p.X
@@ -22,6 +26,12 @@ func fitToBoundary(p r2.Point, env Environment) r2.Point {
 	return r2.Point{x, y}
 }
 
+type ByLength []r2.Point
+
+func (a ByLength) Len() int           { return len(a) }
+func (a ByLength) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByLength) Less(i, j int) bool { return a[i].Norm() < a[j].Norm() }
+
 func getFreeSpot(
 	cells CellList,
 	cell Cell,
@@ -39,8 +49,13 @@ func getFreeSpot(
 		{X: -dist, Y: 0},
 	}
 
-	for _, candidate := range candidates {
-		newPos := cell.position.Add(candidate)
+	newPositions := make([]r2.Point, 4)
+	for posIndex, pos := range candidates {
+		newPositions[posIndex] = cell.position.Add(pos)
+	}
+	sort.Sort(ByLength(newPositions))
+
+	for _, newPos := range newPositions {
 		available := true
 
 		for _, cellToCheck := range cells {
