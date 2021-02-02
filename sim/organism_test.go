@@ -1,6 +1,7 @@
 package sim
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/geo/r2"
@@ -30,7 +31,7 @@ func TestOrganismSplitting(t *testing.T) {
 	}
 
 	// When
-	os := o.split()
+	os := o.split(context.TODO())
 
 	// Then
 	if len(os) != 1 {
@@ -303,8 +304,8 @@ func TestOrganismMutation(t *testing.T) {
 		}
 
 		// When
-		o1.procreate(true, 1, true)
-		os := o1.split()
+		o1.procreate(true, 1, 25, true)
+		os := o1.split(context.TODO())
 		o2 := os[0]
 		o2.mutate(addSpecies)
 		o2.species.types[0].mutateDiet()
@@ -352,8 +353,8 @@ func TestRandomOrganism(t *testing.T) {
 		}
 
 		// When
-		o1.procreate(true, 1, true)
-		os := o1.split()
+		o1.procreate(true, 1, 25, true)
+		os := o1.split(context.TODO())
 		o2 := os[0]
 		o2.mutate(addSpecies)
 		o2.species.types[0].mutateDiet()
