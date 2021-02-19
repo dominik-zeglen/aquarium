@@ -39,7 +39,7 @@ func getFreeSpot(
 ) *r2.Point {
 	dist := float64(1)
 	if !canConnect {
-		dist = 5
+		dist = 3
 	}
 
 	candidates := []r2.Point{
@@ -59,7 +59,7 @@ func getFreeSpot(
 		available := true
 
 		for _, cellToCheck := range cells {
-			if cellToCheck.position.Sub(newPos).Norm() == 0 {
+			if cellToCheck.position.Sub(newPos).Norm() < dist {
 				available = false
 				break
 			}

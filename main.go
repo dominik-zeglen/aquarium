@@ -14,10 +14,10 @@ import (
 	"github.com/opentracing/opentracing-go"
 )
 
-var maxCellsInSim = flag.Int(
-	"mc",
-	2e4,
-	"Maximum cells in the whole sim",
+var maxOrganisms = flag.Int(
+	"m",
+	1e3,
+	"Maximum organisms in the whole sim",
 )
 var verbose = flag.Bool(
 	"v",
@@ -54,7 +54,7 @@ func getConfig() sim.SimConfig {
 	return sim.SimConfig{
 		EnvDivisions:       *envDivisions,
 		MaxCellsInOrganism: *maxCellsInOrganism,
-		MaxCellsInSim:      *maxCellsInSim,
+		MaxOrganisms:       *maxOrganisms,
 		StartCells:         *startCells,
 		Verbose:            *verbose,
 		WarmupIterations:   *warmupIterations,

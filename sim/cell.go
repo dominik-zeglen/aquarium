@@ -76,7 +76,7 @@ func (c Cell) canProcreate(iteration int) bool {
 	if c.procreatedAt == 0 {
 		return !c.shouldEat()
 	}
-	return iteration-c.procreatedAt > int(c.cellType.GetProcreationCd()) && !c.shouldEat()
+	return iteration-c.procreatedAt > int(c.cellType.GetProcreationCd()) && !c.shouldEat() && c.alive
 }
 
 func (c *Cell) shouldProcreate(iteration int) bool {
@@ -113,6 +113,10 @@ func (c Cell) shouldDie(
 	iteration int,
 	organismPosition r2.Point,
 ) bool {
+	if !c.alive {
+		return false
+	}
+
 	age := c.getAge(iteration)
 	isStarving := c.satiation <= 0
 	isPastLifetime := c.cellType.GetTimeToDie() < age
@@ -243,4 +247,17 @@ func (cl CellList) Remove(removeMap map[int]bool) CellList {
 	}
 
 	return cells[:index]
+}
+
+func (cl CellList) Center() CellList {
+	cells := make(CellList, len(cl))
+	center := cl.GetCenter()
+
+	for cIndex := range cells {
+		cells[cIndex] = cl[cIndex]
+		cells[cIndex].id = cIndex
+		cells[cIndex].position = cells[cIndex].position.Sub(center)
+	}
+
+	return cells
 }

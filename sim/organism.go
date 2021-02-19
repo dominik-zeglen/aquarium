@@ -2,6 +2,7 @@ package sim
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"math/rand"
 
@@ -71,29 +72,30 @@ func (o *Organism) procreate(
 	maxCells int,
 	force bool,
 ) {
-	if canProcreate && len(o.cells.GetAlive()) < maxCells {
-		for cellIndex, cell := range o.cells {
-			produced := o.species.produces[cell.cellType.ID]
-			producedCt := make([]*CellType, len(produced))
-
-			for ctIndex := range produced {
-				producedCt[ctIndex] = &o.species.types[ctIndex]
-			}
-
-			if (cell.shouldProcreate(iteration) || force) && len(producedCt) > 0 {
-				freeSpot := getFreeSpot(o.cells, cell, cell.cellType.CanConnect())
-
-				if freeSpot != nil {
-					child := o.cells[cellIndex].procreate(iteration, producedCt)
-					o.lastCellId++
-					child.id = o.lastCellId
-					child.position = *freeSpot
-
-					o.cells = append(o.cells, child)
-				}
-			}
-
+	for cellIndex, cell := range o.cells.GetAlive() {
+		if len(o.cells) >= maxCells || !(cell.shouldProcreate(iteration) || force) {
+			return
 		}
+
+		produced := o.species.produces[cell.cellType.ID]
+		producedCt := make([]*CellType, len(produced))
+
+		for ctIndex := range produced {
+			producedCt[ctIndex] = &o.species.types[ctIndex]
+		}
+
+		if len(producedCt) > 0 {
+			freeSpot := getFreeSpot(o.cells, cell, cell.cellType.CanConnect())
+			if freeSpot != nil {
+				child := o.cells[cellIndex].procreate(iteration, producedCt)
+				o.lastCellId++
+				child.id = o.lastCellId
+				child.position = *freeSpot
+
+				o.cells = append(o.cells, child)
+			}
+		}
+
 	}
 }
 
@@ -150,7 +152,7 @@ func (o *Organism) killCells(env Environment, iteration int) {
 	}
 }
 
-func (o *Organism) split(ctx context.Context) []Organism {
+func (o *Organism) split(ctx context.Context, canProcreate bool, iteration int) []Organism {
 	splitSpan, splitSpanCtx := opentracing.StartSpanFromContext(ctx, "split-grids")
 	defer splitSpan.Finish()
 
@@ -225,14 +227,30 @@ func (o *Organism) split(ctx context.Context) []Organism {
 
 	if len(grids) > 1 {
 		organisms := make(OrganismList, len(grids)-1)
-		o.cells = grids[0]
 
-		for gridIndex, grid := range grids[1:] {
+		maxCellsIndex := 0
+		for gridIndex := range grids {
+			if len(grids[maxCellsIndex]) < len(grids[gridIndex]) {
+				maxCellsIndex = gridIndex
+			}
+		}
+
+		o.cells = grids[maxCellsIndex].Center()
+		gridsSliced := append(grids[:maxCellsIndex], grids[maxCellsIndex+1:]...)
+
+		if !canProcreate {
+			return OrganismList{}
+		}
+
+		for gridIndex, grid := range gridsSliced {
 			center := grid.GetCenter()
+			grid = grid.Center()
 
 			for cIndex := range grid {
-				grid[cIndex].id = cIndex
-				grid[cIndex].position = grid[cIndex].position.Sub(center)
+				if !canProcreate {
+					grid[cIndex].alive = false
+					grid[cIndex].diedAt = iteration
+				}
 			}
 
 			organisms[gridIndex] = *o
@@ -256,6 +274,9 @@ func (o *Organism) sim(
 	addSpecies AddSpecies,
 	canProcreate bool,
 ) OrganismList {
+	if len(o.cells) > maxCells {
+		panic(fmt.Sprint("Exceeded limit", len(o.cells)))
+	}
 	if o.IsAlive() {
 		o.eat(env, iteration)
 		o.move()
@@ -271,7 +292,7 @@ func (o *Organism) sim(
 			o.diedAt = iteration
 		}
 
-		return o.split(ctx)
+		return o.split(ctx, canProcreate, iteration)
 	}
 
 	return OrganismList{}
@@ -363,7 +384,7 @@ func (ol OrganismList) GetAreaCount(start r2.Point, end r2.Point) int {
 		position := organism.position
 		if position.X > start.X && position.X < end.X &&
 			position.Y > start.Y && position.Y < end.Y {
-			counter += len(organism.cells)
+			counter++
 		}
 	}
 

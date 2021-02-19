@@ -14,7 +14,7 @@ import (
 type SimConfig struct {
 	EnvDivisions       int
 	MaxCellsInOrganism int
-	MaxCellsInSim      int
+	MaxOrganisms       int
 	StartCells         int
 	Verbose            bool
 	WarmupIterations   int
@@ -160,7 +160,6 @@ func (s Sim) getAreas(ctx context.Context) []bool {
 	aliveOrganisms := s.organisms.GetAlive()
 
 	for areaIndex := range areas {
-		cells := 0
 		auxArea := areaIndex >= s.areaCount*s.areaCount
 		max := s.areaCount
 
@@ -191,9 +190,9 @@ func (s Sim) getAreas(ctx context.Context) []bool {
 			spanCtx,
 			"count-area",
 		)
-		cells = aliveOrganisms.GetAreaCount(start, end)
+		organisms := aliveOrganisms.GetAreaCount(start, end)
+		areas[areaIndex] = organisms < (s.maxCells / s.areaCount / s.areaCount)
 		countSpan.Finish()
-		areas[areaIndex] = cells < (s.maxCells / s.areaCount / s.areaCount)
 	}
 
 	return areas
@@ -210,7 +209,7 @@ func (s *Sim) Create(config SimConfig) {
 	}
 
 	s.organisms = startCells
-	s.maxCells = config.MaxCellsInSim
+	s.maxCells = config.MaxOrganisms
 	s.areaCount = config.EnvDivisions
 	s.verbose = config.Verbose
 	s.warmupIterations = config.WarmupIterations
