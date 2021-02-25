@@ -44,11 +44,12 @@ func TestMutation(t *testing.T) {
 			maxSatiation: 150,
 			timeToDie:    10,
 			connects:     15,
+			points:       60,
 		}
 		s := Species{
 			produces: [][]int{{0}},
 			types:    []CellType{ct},
-			points:   100,
+			points:   60,
 		}
 
 		// When

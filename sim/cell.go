@@ -1,6 +1,7 @@
 package sim
 
 import (
+	"fmt"
 	"math/rand"
 
 	"github.com/golang/geo/r2"
@@ -80,13 +81,18 @@ func (c Cell) canProcreate(iteration int) bool {
 }
 
 func (c *Cell) shouldProcreate(iteration int) bool {
-	return c.canProcreate(iteration) && rand.Float32() > .5
+	return c.canProcreate(iteration) && rand.Float32() > .25
 }
 
 func (c *Cell) procreate(iteration int, produces []*CellType) Cell {
 	food := c.cellType.GetMaxSatiation() / 2
 
-	ct := produces[rand.Intn(len(produces))]
+	produceIndex := rand.Intn(len(produces))
+	ct := produces[produceIndex]
+
+	if produceIndex > 1 {
+		fmt.Println("Produces", produceIndex)
+	}
 
 	descendant := Cell{
 		satiation:    food,
@@ -260,4 +266,26 @@ func (cl CellList) Center() CellList {
 	}
 
 	return cells
+}
+
+func (cl CellList) Uniq() CellList {
+	cells := make(CellList, len(cl))
+	index := 0
+
+	for cellIndex := range cl {
+		found := false
+		for searchCellIndex := range cl[:cellIndex] {
+			if cl[cellIndex].id == cl[searchCellIndex].id {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			cells[index] = cl[cellIndex]
+			index++
+		}
+	}
+
+	return cells[:index]
 }

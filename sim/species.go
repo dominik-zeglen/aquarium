@@ -16,7 +16,22 @@ type Species struct {
 	produces [][]int
 }
 
-const startingPoints = 70
+const startingPoints = 30
+
+var startingCellType CellType
+
+func init() {
+	diets := []Diet{Herbivore}
+	startingCellType = CellType{
+		ID:             0,
+		diets:          diets,
+		Herbivore:      10,
+		wasteTolerance: 16,
+		mobility:       10,
+		consumption:    10,
+		points:         startingPoints,
+	}
+}
 
 func (s Species) copy() Species {
 	n := s
@@ -51,7 +66,10 @@ func (s Species) mutate() Species {
 	n.types[typeIndex] = mutatedType
 
 	if s.getMaxTypes() > len(s.types) {
-		ct := s.types[typeCount-1].copy()
+		ct := startingCellType.copy()
+		for ct.points > ct.getInvestedPoints() {
+			ct = ct.mutateOnce()
+		}
 
 		n.types = append(n.types, ct)
 		prod := n.produces[typeCount-1]
@@ -63,16 +81,7 @@ func (s Species) mutate() Species {
 }
 
 func getRandomHerbivore() Species {
-	diets := []Diet{Herbivore}
-	ct := CellType{
-		ID:             0,
-		diets:          diets,
-		Herbivore:      10,
-		wasteTolerance: 16,
-		mobility:       10,
-		consumption:    10,
-		points:         startingPoints,
-	}
+	ct := startingCellType.copy()
 
 	for ct.points > ct.getInvestedPoints() {
 		ct = ct.mutateOnce()

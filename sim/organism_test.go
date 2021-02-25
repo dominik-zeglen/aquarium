@@ -31,7 +31,7 @@ func TestOrganismSplitting(t *testing.T) {
 	}
 
 	// When
-	os := o.split(context.TODO())
+	os := o.split(context.TODO(), true, 1)
 
 	// Then
 	if len(os) != 1 {
@@ -105,7 +105,7 @@ func TestOrganismEating(t *testing.T) {
 	left := o.eat(env, 0)
 
 	// Then
-	expected := 13336
+	expected := 3736
 	if left != expected {
 		t.Errorf("Expected %d, got %d", expected, left)
 	}
@@ -305,7 +305,7 @@ func TestOrganismMutation(t *testing.T) {
 
 		// When
 		o1.procreate(true, 1, 25, true)
-		os := o1.split(context.TODO())
+		os := o1.split(context.TODO(), true, 1)
 		o2 := os[0]
 		o2.mutate(addSpecies)
 		o2.species.types[0].mutateDiet()
@@ -354,7 +354,7 @@ func TestRandomOrganism(t *testing.T) {
 
 		// When
 		o1.procreate(true, 1, 25, true)
-		os := o1.split(context.TODO())
+		os := o1.split(context.TODO(), true, 1)
 		o2 := os[0]
 		o2.mutate(addSpecies)
 		o2.species.types[0].mutateDiet()

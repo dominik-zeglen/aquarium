@@ -250,7 +250,7 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 
 	data.Procreation.CanProcreate = data.AliveCellCount < s.maxCells
 	index := 0
-	highestPoints := 70
+	highestPoints := 0
 
 	for _, species := range s.species {
 		if !species.extinct {

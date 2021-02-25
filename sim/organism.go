@@ -2,7 +2,6 @@ package sim
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"math/rand"
 
@@ -184,13 +183,14 @@ func (o *Organism) split(ctx context.Context, canProcreate bool, iteration int) 
 	// Combine grids
 	combineSpan, _ := opentracing.StartSpanFromContext(splitSpanCtx, "combine-grids")
 	steps := 0
-	for (lastLen < len(grids) || do) && len(grids) > 1 {
+	for (lastLen > len(grids) || do) && len(grids) > 1 {
 		lastLen = len(grids)
 		do = false
 		steps++
 
 		for gridAIndex, gridA := range grids {
 			found := false
+
 			if found {
 				break
 			}
@@ -225,6 +225,10 @@ func (o *Organism) split(ctx context.Context, canProcreate bool, iteration int) 
 	)
 	combineSpan.Finish()
 
+	for gridIndex, grid := range grids {
+		grids[gridIndex] = grid.Uniq()
+	}
+
 	if len(grids) > 1 {
 		organisms := make(OrganismList, len(grids)-1)
 
@@ -235,7 +239,7 @@ func (o *Organism) split(ctx context.Context, canProcreate bool, iteration int) 
 			}
 		}
 
-		o.cells = grids[maxCellsIndex].Center()
+		o.cells = grids[maxCellsIndex]
 		gridsSliced := append(grids[:maxCellsIndex], grids[maxCellsIndex+1:]...)
 
 		if !canProcreate {
@@ -274,9 +278,6 @@ func (o *Organism) sim(
 	addSpecies AddSpecies,
 	canProcreate bool,
 ) OrganismList {
-	if len(o.cells) > maxCells {
-		panic(fmt.Sprint("Exceeded limit", len(o.cells)))
-	}
 	if o.IsAlive() {
 		o.eat(env, iteration)
 		o.move()

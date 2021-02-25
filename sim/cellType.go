@@ -311,7 +311,7 @@ func (t CellType) mutateOnce() CellType {
 			n.maxCapacity += value
 		}
 
-		if attr > .35 && attr < .41 {
+		if attr > .35 && attr < .41 && n.connects < 15 {
 			n.connects += int8(value)
 		}
 
