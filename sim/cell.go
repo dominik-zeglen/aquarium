@@ -1,7 +1,6 @@
 package sim
 
 import (
-	"fmt"
 	"math/rand"
 
 	"github.com/golang/geo/r2"
@@ -26,7 +25,7 @@ type Cell struct {
 func (c Cell) GetFood(e Environment, iteration int, organismHeight float64) int {
 	food := 0
 	if c.cellType.Herbivore > 0 {
-		food += int(float64(c.cellType.Herbivore) * e.getLightOnHeight(c.position.Y+organismHeight, iteration))
+		food += int(float64(c.cellType.Herbivore) * e.getLightOnHeight(c.position.Y+organismHeight, iteration) * 3)
 	}
 	if c.cellType.Funghi > 0 {
 		food += int(c.cellType.getProcessedWaste(e.getToxicityOnHeight(c.position.Y + organismHeight)))
@@ -89,10 +88,6 @@ func (c *Cell) procreate(iteration int, produces []*CellType) Cell {
 
 	produceIndex := rand.Intn(len(produces))
 	ct := produces[produceIndex]
-
-	if produceIndex > 1 {
-		fmt.Println("Produces", produceIndex)
-	}
 
 	descendant := Cell{
 		satiation:    food,

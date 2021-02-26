@@ -122,6 +122,12 @@ func (o Organism) IsAlive() bool {
 	return o.cells.GetAliveCount() > 0
 }
 
+func (o *Organism) Kill(iteration int) {
+	for cellIndex := range o.cells {
+		o.cells[cellIndex].die(iteration)
+	}
+}
+
 func (o *Organism) move() r2.Point {
 	var moveVec r2.Point
 

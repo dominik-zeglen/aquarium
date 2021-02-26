@@ -3,6 +3,7 @@ package sim
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -216,6 +217,13 @@ func (s *Sim) Create(config SimConfig) {
 	s.maxCellsInOrganism = config.MaxCellsInOrganism
 }
 
+func (s *Sim) killRandomOrganisms() {
+	for i := 0; i < len(s.organisms)/200; i++ {
+		index := rand.Intn(len(s.organisms))
+		s.organisms[index].Kill(s.iteration)
+	}
+}
+
 func (s *Sim) RunStep(ctx context.Context) IterationData {
 	span, stepSpanCtx := opentracing.StartSpanFromContext(
 		ctx,
@@ -251,10 +259,15 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 	data.Procreation.CanProcreate = data.AliveCellCount < s.maxCells
 	index := 0
 	highestPoints := 0
+	allPoints := 0
+	highestConnectivity := 1
+	allConnectivity := 0
 
 	for _, species := range s.species {
 		if !species.extinct {
 			for tIndex := range species.types {
+				allPoints += species.points
+				allConnectivity += int(species.types[0].connects)
 				if data.Waste.MaxTolerance < species.types[tIndex].GetWasteTolerance() {
 					data.Waste.MaxTolerance = species.types[tIndex].GetWasteTolerance()
 				}
@@ -264,9 +277,15 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 				if highestPoints < species.points {
 					highestPoints = species.points
 				}
+				if highestConnectivity < int(species.types[0].connects) {
+					highestConnectivity = int(species.types[0].connects)
+				}
 			}
 		}
 	}
+
+	avgPoints := allPoints / len(s.species)
+	avgConnectivity := allConnectivity / len(s.species)
 
 	areas := s.getAreas(stepSpanCtx)
 
@@ -342,6 +361,7 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 	simSpan.Finish()
 
 	s.organisms = nextGenOrganisms[:index]
+	s.killRandomOrganisms()
 	s.env.changeToxicity(waste)
 
 	s.cleanupSpecies(stepSpanCtx)
@@ -350,13 +370,15 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 
 	if s.verbose {
 		fmt.Printf(
-			"Iteration %6d, organisms: %5d, alive: %5d, waste: %.4f species: %4d, highest level: %3d \n",
+			"It: %6d, o: %5d, w: %.4f sp: %4d, HLvl: %3d, AvgLvl: %3d, HCn: %2d, AvgCn: %2d\n",
 			s.iteration,
 			len(s.organisms),
-			s.GetAliveCount(),
 			s.env.toxicity,
 			len(s.GetSpecies().GetAlive()),
 			highestPoints-startingPoints+1,
+			avgPoints-startingPoints+1,
+			highestConnectivity,
+			avgConnectivity,
 		)
 	}
 

@@ -36,7 +36,7 @@ var envDivisions = flag.Int(
 )
 var warmupIterations = flag.Int(
 	"w",
-	600,
+	5e4,
 	"Do not pause sim until number of this iterations has been reached",
 )
 var startCells = flag.Int(

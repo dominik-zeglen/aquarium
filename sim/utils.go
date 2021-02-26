@@ -39,7 +39,7 @@ func getFreeSpot(
 ) *r2.Point {
 	dist := float64(1)
 	if !canConnect {
-		dist = 3
+		dist = 10
 	}
 
 	candidates := []r2.Point{

@@ -20,7 +20,7 @@ func (e Environment) getToxicityOnHeight(height float64) float64 {
 }
 
 func (e Environment) getLightOnHeight(height float64, iteration int) float64 {
-	hour := iteration % 24
+	hour := (iteration / 10) % 24
 	light := math.Abs(float64((hour - 12)))
-	return light * (1 - height/float64(e.height))
+	return light*(1-height/float64(e.height))*.8 + .2
 }

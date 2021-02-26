@@ -16,7 +16,7 @@ type Species struct {
 	produces [][]int
 }
 
-const startingPoints = 30
+const startingPoints = 60
 
 var startingCellType CellType
 
@@ -67,6 +67,7 @@ func (s Species) mutate() Species {
 
 	if s.getMaxTypes() > len(s.types) {
 		ct := startingCellType.copy()
+		ct.ID = s.types[len(s.types)-1].ID + 1
 		for ct.points > ct.getInvestedPoints() {
 			ct = ct.mutateOnce()
 		}

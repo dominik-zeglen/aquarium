@@ -198,14 +198,8 @@ func (t CellType) getDietPoints() int {
 		dietPoints += int(t.Funghi)
 	}
 
-	if diets > 2 {
-		return dietPoints * 2
-	}
-	if diets > 1 {
-		return dietPoints * 3 / 2
-	}
+	return dietPoints * diets
 
-	return dietPoints
 }
 
 func (t *CellType) mutateDiet() {
@@ -257,7 +251,7 @@ func (t CellType) mutate() CellType {
 	ct := t.copy()
 	ct.points++
 
-	if rand.Float32() > .9 {
+	if rand.Float32() > .95 {
 		ct.mutateDiet()
 
 		mutationCount := (rand.Intn(10) + 10)
@@ -311,7 +305,7 @@ func (t CellType) mutateOnce() CellType {
 			n.maxCapacity += value
 		}
 
-		if attr > .35 && attr < .41 && n.connects < 15 {
+		if attr > .35 && attr < .41 {
 			n.connects += int8(value)
 		}
 
