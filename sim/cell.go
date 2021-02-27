@@ -80,7 +80,7 @@ func (c Cell) canProcreate(iteration int) bool {
 }
 
 func (c *Cell) shouldProcreate(iteration int) bool {
-	return c.canProcreate(iteration) && rand.Float32() > .25
+	return c.canProcreate(iteration) && rand.Float32() > .1
 }
 
 func (c *Cell) procreate(iteration int, produces []*CellType) Cell {

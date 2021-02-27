@@ -28,7 +28,6 @@ func init() {
 		Herbivore:      10,
 		wasteTolerance: 16,
 		mobility:       10,
-		consumption:    10,
 		points:         startingPoints,
 	}
 }

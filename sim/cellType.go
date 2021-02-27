@@ -53,7 +53,7 @@ func (t CellType) GetSize() int {
 }
 
 func (t CellType) CanConnect() bool {
-	return t.connects >= 15
+	return t.connects >= 10
 }
 
 func (t CellType) GetMobility() int {
@@ -124,7 +124,7 @@ func (c CellType) GetConsumption() int {
 	return int(
 		float32(c.GetMaxSatiation()) / 20 *
 			float32(c.GetSize()) / 30 *
-			float32(c.consumption) / 10,
+			float32(10-c.consumption) / 10,
 	)
 }
 
@@ -145,8 +145,8 @@ func (t *CellType) validate() bool {
 		t.Funghi = 0
 		return false
 	}
-	if t.consumption < 8 {
-		t.consumption = 8
+	if t.consumption > 4 {
+		t.consumption = 4
 		return false
 	}
 	if t.timeToDie > 600 {
@@ -173,8 +173,8 @@ func (t *CellType) validate() bool {
 		t.mobility = 0
 		return false
 	}
-	if t.connects > 15 {
-		t.connects = 15
+	if t.connects > 10 {
+		t.connects = 10
 		return false
 	}
 

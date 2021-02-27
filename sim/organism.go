@@ -122,7 +122,7 @@ func (o Organism) IsAlive() bool {
 	return o.cells.GetAliveCount() > 0
 }
 
-func (o *Organism) Kill(iteration int) {
+func (o *Organism) die(iteration int) {
 	for cellIndex := range o.cells {
 		o.cells[cellIndex].die(iteration)
 	}
@@ -284,6 +284,7 @@ func (o *Organism) sim(
 	addSpecies AddSpecies,
 	canProcreate bool,
 ) OrganismList {
+	age := iteration - o.bornAt
 	if o.IsAlive() {
 		o.eat(env, iteration)
 		o.move()
@@ -292,11 +293,18 @@ func (o *Organism) sim(
 			o.mutate(addSpecies)
 		}
 
-		o.procreate(canProcreate, iteration, maxCells, false)
-		o.killCells(env, iteration)
+		if age < 3 || age > 200+iteration/3200 {
+			if rand.Float64() > .66 {
+				o.die(iteration)
+			}
+		} else {
+			o.procreate(canProcreate, iteration, maxCells, false)
+			o.killCells(env, iteration)
+		}
 
 		if o.cells.GetAliveCount() == 0 {
 			o.diedAt = iteration
+			return []Organism{}
 		}
 
 		return o.split(ctx, canProcreate, iteration)

@@ -3,7 +3,6 @@ package sim
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"sync"
 	"time"
 
@@ -217,13 +216,6 @@ func (s *Sim) Create(config SimConfig) {
 	s.maxCellsInOrganism = config.MaxCellsInOrganism
 }
 
-func (s *Sim) killRandomOrganisms() {
-	for i := 0; i < len(s.organisms)/200; i++ {
-		index := rand.Intn(len(s.organisms))
-		s.organisms[index].Kill(s.iteration)
-	}
-}
-
 func (s *Sim) RunStep(ctx context.Context) IterationData {
 	span, stepSpanCtx := opentracing.StartSpanFromContext(
 		ctx,
@@ -262,6 +254,7 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 	allPoints := 0
 	highestConnectivity := 1
 	allConnectivity := 0
+	allConnecting := 0
 
 	for _, species := range s.species {
 		if !species.extinct {
@@ -279,6 +272,9 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 				}
 				if highestConnectivity < int(species.types[0].connects) {
 					highestConnectivity = int(species.types[0].connects)
+				}
+				if species.types[0].CanConnect() {
+					allConnecting++
 				}
 			}
 		}
@@ -333,7 +329,7 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 		alive := false
 		removeMap := map[int]bool{}
 		for cellIndex, cell := range organism.cells {
-			if !cell.alive && s.iteration-cell.diedAt > 10 {
+			if !cell.alive && s.iteration-cell.diedAt > 5 {
 				waste += cell.cellType.getWasteAfterDeath()
 				removeMap[cellIndex] = true
 			} else {
@@ -361,7 +357,6 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 	simSpan.Finish()
 
 	s.organisms = nextGenOrganisms[:index]
-	s.killRandomOrganisms()
 	s.env.changeToxicity(waste)
 
 	s.cleanupSpecies(stepSpanCtx)
@@ -370,7 +365,7 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 
 	if s.verbose {
 		fmt.Printf(
-			"It: %6d, o: %5d, w: %.4f sp: %4d, HLvl: %3d, AvgLvl: %3d, HCn: %2d, AvgCn: %2d\n",
+			"It: %6d, o: %5d, w: %.4f sp: %4d, HLvl: %3d, AvgLvl: %3d, HCn: %2d, AvgCn: %2d, CCn: %2d\n",
 			s.iteration,
 			len(s.organisms),
 			s.env.toxicity,
@@ -379,6 +374,7 @@ func (s *Sim) RunStep(ctx context.Context) IterationData {
 			avgPoints-startingPoints+1,
 			highestConnectivity,
 			avgConnectivity,
+			allConnecting,
 		)
 	}
 

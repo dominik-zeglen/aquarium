@@ -1,6 +1,7 @@
 package sim
 
 import (
+	"math/rand"
 	"sort"
 
 	"github.com/golang/geo/r2"
@@ -38,7 +39,7 @@ func getFreeSpot(
 	canConnect bool,
 ) *r2.Point {
 	dist := float64(1)
-	if !canConnect {
+	if !canConnect || rand.Float64() > .8 {
 		dist = 10
 	}
 
