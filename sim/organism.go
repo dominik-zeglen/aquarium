@@ -72,7 +72,8 @@ func (o *Organism) procreate(
 	force bool,
 ) {
 	for cellIndex, cell := range o.cells.GetAlive() {
-		if len(o.cells) >= maxCells || !(cell.shouldProcreate(iteration) || force) {
+		if len(o.cells) >= maxCells ||
+			!(cell.shouldProcreate(iteration) || force) {
 			return
 		}
 
@@ -143,7 +144,9 @@ func (o *Organism) move() r2.Point {
 			Normalize()
 	}
 
-	scaledMoveVec := moveVec.Mul(float64(o.GetMobility()*10) / float64(o.GetMass()))
+	scaledMoveVec := moveVec.Mul(
+		float64(o.GetMobility()*10) / float64(o.GetMass()),
+	)
 	o.position = o.position.Add(scaledMoveVec)
 
 	return scaledMoveVec
@@ -151,20 +154,31 @@ func (o *Organism) move() r2.Point {
 
 func (o *Organism) killCells(env Environment, iteration int) {
 	for cellIndex := range o.cells {
-		if o.cells[cellIndex].shouldDie(env, iteration, o.position) {
-			o.cells[cellIndex].die(iteration)
+		cell := &o.cells[cellIndex]
+		if cell.shouldDie(env, iteration, o.position) {
+			cell.die(iteration)
 		}
 	}
 }
 
-func (o *Organism) split(ctx context.Context, canProcreate bool, iteration int) []Organism {
-	splitSpan, splitSpanCtx := opentracing.StartSpanFromContext(ctx, "split-grids")
+func (o *Organism) split(
+	ctx context.Context,
+	canProcreate bool,
+	iteration int,
+) []Organism {
+	splitSpan, splitSpanCtx := opentracing.StartSpanFromContext(
+		ctx,
+		"split-grids",
+	)
 	defer splitSpan.Finish()
 
 	grids := []CellList{}
 
 	// Check if cell connects with a grid
-	createSpan, _ := opentracing.StartSpanFromContext(splitSpanCtx, "create-grids")
+	createSpan, _ := opentracing.StartSpanFromContext(
+		splitSpanCtx,
+		"create-grids",
+	)
 	for _, cell := range o.cells {
 		found := false
 		for gridIndex, grid := range grids {
@@ -187,7 +201,10 @@ func (o *Organism) split(ctx context.Context, canProcreate bool, iteration int) 
 	do := true
 
 	// Combine grids
-	combineSpan, _ := opentracing.StartSpanFromContext(splitSpanCtx, "combine-grids")
+	combineSpan, _ := opentracing.StartSpanFromContext(
+		splitSpanCtx,
+		"combine-grids",
+	)
 	steps := 0
 	for (lastLen > len(grids) || do) && len(grids) > 1 {
 		lastLen = len(grids)
@@ -219,7 +236,9 @@ func (o *Organism) split(ctx context.Context, canProcreate bool, iteration int) 
 				}
 
 				if found {
-					grids[gridAIndex] = append(grids[gridAIndex], grids[gridBIndex]...)
+					grids[gridAIndex] = append(
+						grids[gridAIndex],
+						grids[gridBIndex]...)
 					grids = append(grids[:gridBIndex], grids[gridBIndex+1:]...)
 					break
 				}

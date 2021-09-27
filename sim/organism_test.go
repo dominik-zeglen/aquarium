@@ -53,13 +53,21 @@ func TestOrganismSplitting(t *testing.T) {
 
 	expectedPosition := r2.Point{X: 2, Y: 2}
 	if smaller.position != expectedPosition {
-		t.Errorf("Expected organism position at (2, 2), got (%.f, %.f)", smaller.position.X, smaller.position.Y)
+		t.Errorf(
+			"Expected organism position at (2, 2), got (%.f, %.f)",
+			smaller.position.X,
+			smaller.position.Y,
+		)
 	}
 
 	cell := smaller.cells[0]
 	expectedCellPosition := r2.Point{}
 	if cell.position != expectedCellPosition {
-		t.Errorf("Expected cell position at (0, 0), got (%.f, %.f)", cell.position.X, cell.position.Y)
+		t.Errorf(
+			"Expected cell position at (0, 0), got (%.f, %.f)",
+			cell.position.X,
+			cell.position.Y,
+		)
 	}
 
 	if cell.id != 0 {
@@ -71,11 +79,12 @@ func TestOrganismEating(t *testing.T) {
 	// Given
 	env := Environment{0, 10, 10}
 	ct := CellType{
-		consumption:  100,
+		consumption:  0,
 		Herbivore:    100,
 		diets:        []Diet{Herbivore},
 		maxCapacity:  200,
-		maxSatiation: -50,
+		maxSatiation: 50,
+		size:         1,
 	}
 	s := Species{
 		produces: [][]int{{0}},
@@ -105,17 +114,17 @@ func TestOrganismEating(t *testing.T) {
 	left := o.eat(env, 0)
 
 	// Then
-	expected := 3736
+	expected := 10300
 	if left != expected {
 		t.Errorf("Expected %d, got %d", expected, left)
 	}
 }
 
-func TestOrganismDyingFromHunger(t *testing.T) {
+func TestOrganismCellDyingFromHunger(t *testing.T) {
 	// Given
 	env := Environment{0, 10, 10}
 	ct := CellType{
-		consumption:  100,
+		consumption:  1,
 		maxSatiation: 150,
 
 		timeToDie: 10,
@@ -136,7 +145,7 @@ func TestOrganismDyingFromHunger(t *testing.T) {
 			alive:     true,
 			cellType:  &ct,
 			hp:        1,
-			satiation: 200,
+			satiation: ct.maxSatiation,
 		}},
 	}
 
@@ -325,11 +334,13 @@ func TestOrganismMutation(t *testing.T) {
 			t.Error("Does not create copy")
 		}
 
-		if len(o1.cells[0].cellType.diets) != 1 || o1.cells[0].cellType.diets[0] != Funghi {
+		if len(o1.cells[0].cellType.diets) != 1 ||
+			o1.cells[0].cellType.diets[0] != Funghi {
 			t.Error("Does not create copy")
 		}
 
-		if o2.cells[0].cellType.diets[0] == Funghi && len(o2.cells[0].cellType.diets) == 1 {
+		if o2.cells[0].cellType.diets[0] == Funghi &&
+			len(o2.cells[0].cellType.diets) == 1 {
 			t.Error("Does not create copy")
 		}
 	})
@@ -378,12 +389,18 @@ func TestRandomOrganism(t *testing.T) {
 			t.Error("Does not create copy")
 		}
 
-		if len(o1.cells[0].cellType.diets) != 1 || o1.cells[0].cellType.diets[0] != Herbivore {
+		if len(o1.cells[0].cellType.diets) != 1 ||
+			o1.cells[0].cellType.diets[0] != Herbivore {
 			t.Error("Does not create copy")
 		}
 
-		if o2.cells[0].cellType.diets[0] == Herbivore && len(o2.cells[0].cellType.diets) == 1 {
-			t.Errorf("Does not create copy, %s vs %s", o1.cells[0].cellType.diets, o2.cells[0].cellType.diets)
+		if o2.cells[0].cellType.diets[0] == Herbivore &&
+			len(o2.cells[0].cellType.diets) == 1 {
+			t.Errorf(
+				"Does not create copy, %s vs %s",
+				o1.cells[0].cellType.diets,
+				o2.cells[0].cellType.diets,
+			)
 		}
 	})
 }

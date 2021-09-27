@@ -123,7 +123,7 @@ func (c CellType) getWasteAfterDeath() float64 {
 func (c CellType) GetConsumption() int {
 	return int(
 		float32(c.GetMaxSatiation()) / 20 *
-			float32(c.GetSize()) / 30 *
+			float32(c.GetSize()) *
 			float32(10-c.consumption) / 10,
 	)
 }

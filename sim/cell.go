@@ -22,13 +22,28 @@ type Cell struct {
 	capacity  int
 }
 
-func (c Cell) GetFood(e Environment, iteration int, organismHeight float64) int {
+func (c Cell) GetFood(
+	e Environment,
+	iteration int,
+	organismHeight float64,
+) int {
 	food := 0
 	if c.cellType.Herbivore > 0 {
-		food += int(float64(c.cellType.Herbivore) * e.getLightOnHeight(c.position.Y+organismHeight, iteration) * 3)
+		food += int(
+			float64(
+				c.cellType.Herbivore,
+			) * e.getLightOnHeight(
+				c.position.Y+organismHeight,
+				iteration,
+			) * 3,
+		)
 	}
 	if c.cellType.Funghi > 0 {
-		food += int(c.cellType.getProcessedWaste(e.getToxicityOnHeight(c.position.Y + organismHeight)))
+		food += int(
+			c.cellType.getProcessedWaste(
+				e.getToxicityOnHeight(c.position.Y + organismHeight),
+			),
+		)
 	}
 
 	return food
@@ -76,7 +91,9 @@ func (c Cell) canProcreate(iteration int) bool {
 	if c.procreatedAt == 0 {
 		return !c.shouldEat()
 	}
-	return iteration-c.procreatedAt > int(c.cellType.GetProcreationCd()) && !c.shouldEat() && c.alive
+	return iteration-c.procreatedAt > int(c.cellType.GetProcreationCd()) &&
+		!c.shouldEat() &&
+		c.alive
 }
 
 func (c *Cell) shouldProcreate(iteration int) bool {
@@ -121,7 +138,9 @@ func (c Cell) shouldDie(
 	age := c.getAge(iteration)
 	isStarving := c.satiation <= 0
 	isPastLifetime := c.cellType.GetTimeToDie() < age
-	isEnvironmentTooToxic := env.getToxicityOnHeight(c.position.Y+organismPosition.Y) > c.cellType.GetWasteTolerance()
+	isEnvironmentTooToxic := env.getToxicityOnHeight(
+		c.position.Y+organismPosition.Y,
+	) > c.cellType.GetWasteTolerance()
 
 	mustDie := isPastLifetime ||
 		isEnvironmentTooToxic ||

@@ -16,7 +16,7 @@ type Species struct {
 	produces [][]int
 }
 
-const startingPoints = 60
+const startingPoints = 30
 
 var startingCellType CellType
 
