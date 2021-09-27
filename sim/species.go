@@ -18,18 +18,13 @@ type Species struct {
 
 const startingPoints = 30
 
-var startingCellType CellType
-
-func init() {
-	diets := []Diet{Herbivore}
-	startingCellType = CellType{
-		ID:             0,
-		diets:          diets,
-		Herbivore:      10,
-		wasteTolerance: 16,
-		mobility:       10,
-		points:         startingPoints,
-	}
+var startingCellType = CellType{
+	ID:             0,
+	diets:          []Diet{Herbivore},
+	Herbivore:      17,
+	wasteTolerance: 16,
+	mobility:       3,
+	points:         startingPoints + 1,
 }
 
 func (s Species) copy() Species {
