@@ -2,9 +2,11 @@ package sim
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/golang/geo/r2"
+	"github.com/stretchr/testify/assert"
 )
 
 func addSpecies(s Species) *Species {
@@ -34,9 +36,7 @@ func TestOrganismSplitting(t *testing.T) {
 	os := o.split(context.TODO(), true, 1)
 
 	// Then
-	if len(os) != 1 {
-		t.Errorf("Expected 1, got %d", len(os))
-	}
+	assert.Equal(t, 1, len(os))
 
 	smaller := os[0]
 	if len(os[0].cells) > len(o.cells) {
@@ -72,6 +72,84 @@ func TestOrganismSplitting(t *testing.T) {
 
 	if cell.id != 0 {
 		t.Errorf("Expected cell ID to be 0, got %d", cell.id)
+	}
+}
+
+func BenchmarkOrganismSplitting_vertical(b *testing.B) {
+	cells := make([]Cell, gridSize)
+
+	for i := 0; i < gridSize; i++ {
+		cells[i].id = i
+		cells[i].position = r2.Point{float64(i), 0}
+	}
+
+	for i := 0; i < b.N; i++ {
+		o := Organism{
+			action: idle,
+			cells:  cells,
+		}
+		o.split(context.TODO(), true, 1)
+	}
+}
+
+func BenchmarkOrganismSplitting_horizontal(b *testing.B) {
+	cells := make([]Cell, gridSize)
+
+	for i := 0; i < gridSize; i++ {
+		cells[i].id = i
+		cells[i].position = r2.Point{0, float64(i)}
+	}
+
+	for i := 0; i < b.N; i++ {
+		o := Organism{
+			action: idle,
+			cells:  cells,
+		}
+		o.split(context.TODO(), true, 1)
+	}
+}
+
+func BenchmarkOrganismSplitting_checkboard(b *testing.B) {
+	cells := make([]Cell, gridSize)
+
+	for i := 0; i < gridSize; i++ {
+		cells[i].id = i
+		cells[i].position = r2.Point{
+			float64((i*2)%6 + ((i % 6) % 2)),
+			float64(i / 6),
+		}
+	}
+
+	for i := 0; i < b.N; i++ {
+		o := Organism{
+			action: idle,
+			cells:  cells,
+		}
+		o.split(context.TODO(), true, 1)
+	}
+}
+
+func BenchmarkOrganismSplitting_random(b *testing.B) {
+	cells := CellList{{
+		id:       0,
+		position: r2.Point{0, 0},
+	}, {
+		id:       1,
+		position: r2.Point{1, 0},
+	}, {
+		id:       2,
+		position: r2.Point{1, 1},
+	}, {
+		id:       3,
+		position: r2.Point{2, 2},
+	}}
+
+	for i := 0; i < b.N; i++ {
+		o := Organism{
+			action: idle,
+			cells:  cells,
+		}
+		o.split(context.TODO(), true, 1)
 	}
 }
 
@@ -114,7 +192,7 @@ func TestOrganismEating(t *testing.T) {
 	left := o.eat(env, 0)
 
 	// Then
-	expected := 10300
+	expected := 10896
 	if left != expected {
 		t.Errorf("Expected %d, got %d", expected, left)
 	}
@@ -309,11 +387,13 @@ func TestOrganismMutation(t *testing.T) {
 				cellType:  &s.types[0],
 				hp:        1,
 				satiation: 1,
+				position:  r2.Point{0, 0},
 			}},
 		}
 
 		// When
 		o1.procreate(true, 1, 25, true)
+		fmt.Println(o1.cells)
 		os := o1.split(context.TODO(), true, 1)
 		o2 := os[0]
 		o2.mutate(addSpecies)

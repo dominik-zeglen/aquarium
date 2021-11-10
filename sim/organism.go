@@ -7,8 +7,9 @@ import (
 
 	"github.com/golang/geo/r2"
 	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/log"
 )
+
+const gridSize = 11
 
 type Organism struct {
 	id       int
@@ -166,92 +167,38 @@ func (o *Organism) split(
 	canProcreate bool,
 	iteration int,
 ) []Organism {
-	splitSpan, splitSpanCtx := opentracing.StartSpanFromContext(
+	if len(o.cells) == 1 {
+		return OrganismList{}
+	}
+
+	splitSpan, _ := opentracing.StartSpanFromContext(
 		ctx,
 		"split-grids",
 	)
 	defer splitSpan.Finish()
 
-	grids := []CellList{}
-
-	// Check if cell connects with a grid
-	createSpan, _ := opentracing.StartSpanFromContext(
-		splitSpanCtx,
-		"create-grids",
-	)
-	for _, cell := range o.cells {
-		found := false
-		for gridIndex, grid := range grids {
-			for _, cellInGrid := range grid {
-				if cell.position.Sub(cellInGrid.position).Norm() == 1 {
-					grids[gridIndex] = append(grids[gridIndex], cell)
-					found = true
-					break
-				}
-			}
-		}
-
-		if !found {
-			grids = append(grids, CellList{cell})
-		}
+	grid := make([][]*Cell, gridSize)
+	for i := 0; i < gridSize; i++ {
+		grid[i] = make([]*Cell, gridSize)
 	}
-	createSpan.Finish()
 
-	lastLen := len(grids)
-	do := true
+	for cellIndex := range o.cells {
+		x := int(o.cells[cellIndex].position.X) + gridSize/2
+		y := int(o.cells[cellIndex].position.Y) + gridSize/2
 
-	// Combine grids
-	combineSpan, _ := opentracing.StartSpanFromContext(
-		splitSpanCtx,
-		"combine-grids",
-	)
-	steps := 0
-	for (lastLen > len(grids) || do) && len(grids) > 1 {
-		lastLen = len(grids)
-		do = false
-		steps++
-
-		for gridAIndex, gridA := range grids {
-			found := false
-
-			if found {
-				break
-			}
-			for gridBIndex := gridAIndex + 1; gridBIndex < len(grids); gridBIndex++ {
-				gridB := grids[gridBIndex]
-				if found {
-					break
-				}
-
-				for _, cellA := range gridA {
-					if found {
-						break
-					}
-					for _, cellB := range gridB {
-						if cellA.id == cellB.id {
-							found = true
-							break
-						}
-					}
-				}
-
-				if found {
-					grids[gridAIndex] = append(
-						grids[gridAIndex],
-						grids[gridBIndex]...)
-					grids = append(grids[:gridBIndex], grids[gridBIndex+1:]...)
-					break
-				}
-			}
-		}
+		grid[y][x] = &o.cells[cellIndex]
 	}
-	combineSpan.LogFields(
-		log.Int("steps", steps),
-	)
-	combineSpan.Finish()
 
-	for gridIndex, grid := range grids {
-		grids[gridIndex] = grid.Uniq()
+	graph := CellGraph{}
+	graph.Init(gridSize, gridSize, grid)
+	ptrGrids := graph.GetIslands()
+	grids := make([]CellList, len(ptrGrids))
+
+	for i := 0; i < len(grids); i++ {
+		grids[i] = make(CellList, len(ptrGrids[i]))
+		for j := 0; j < len(ptrGrids[i]); j++ {
+			grids[i][j] = *ptrGrids[i][j]
+		}
 	}
 
 	if len(grids) > 1 {

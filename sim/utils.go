@@ -40,7 +40,7 @@ func getFreeSpot(
 ) *r2.Point {
 	dist := float64(1)
 	if !canConnect || rand.Float64() > .8 {
-		dist = 10
+		dist = 2
 	}
 
 	candidates := []r2.Point{
@@ -57,6 +57,13 @@ func getFreeSpot(
 	sort.Sort(ByLength(newPositions))
 
 	for _, newPos := range newPositions {
+		isInBounds := newPos.X >= 0 && newPos.X < gridSize/2 && newPos.Y >= 0 &&
+			newPos.Y < gridSize/2
+
+		if !isInBounds {
+			continue
+		}
+
 		available := true
 
 		for _, cellToCheck := range cells {

@@ -1,4 +1,4 @@
-FROM golang:1.12.7-stretch AS builder
+FROM golang:1.17.3-stretch AS builder
 
 ENV GOBIN /go/bin
 ENV GO111MODULE on 
