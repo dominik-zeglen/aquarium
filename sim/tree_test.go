@@ -9,13 +9,13 @@ import (
 
 func TestIslandCounting(t *testing.T) {
 	// Given
-	cell := Cell{}
-	m := [][]*Cell{
-		{&cell, &cell, nil, nil, nil},
-		{&cell, nil, nil, nil, nil},
-		{nil, nil, &cell, nil, nil},
-		{&cell, &cell, nil, nil, nil},
-		{nil, nil, nil, nil, &cell},
+	index := 1
+	m := [][]*int{
+		{&index, &index, nil, nil, nil},
+		{&index, nil, nil, nil, nil},
+		{nil, nil, &index, nil, nil},
+		{&index, &index, nil, nil, nil},
+		{nil, nil, nil, nil, &index},
 	}
 
 	// When
@@ -35,11 +35,11 @@ func TestIslandCounting(t *testing.T) {
 
 func TestNotRectangular(t *testing.T) {
 	// Given
-	cell := Cell{}
-	m := [][]*Cell{
-		{&cell, &cell, nil, nil, nil},
-		{&cell, nil, nil, nil, nil},
-		{nil, nil, nil, nil, &cell},
+	index := 1
+	m := [][]*int{
+		{&index, &index, nil, nil, nil},
+		{&index, nil, nil, nil, nil},
+		{nil, nil, nil, nil, &index},
 	}
 
 	// When

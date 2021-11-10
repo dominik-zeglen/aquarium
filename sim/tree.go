@@ -1,12 +1,12 @@
 package sim
 
 type CellGraph struct {
-	m [][]*Cell
+	m [][]*int
 	x int
 	y int
 }
 
-func (cg *CellGraph) Init(x int, y int, m [][]*Cell) {
+func (cg *CellGraph) Init(x int, y int, m [][]*int) {
 	cg.x = x
 	cg.y = y
 	cg.m = m
@@ -22,12 +22,12 @@ func (cg *CellGraph) isSafe(x int, y int, visited [][]bool) bool {
 	return !visited[y][x] && cg.m[y][x] != nil
 }
 
-func (cg *CellGraph) dfs(x int, y int, visited [][]bool) []*Cell {
+func (cg *CellGraph) dfs(x int, y int, visited [][]bool) []*int {
 	rowNbr := []int{-1, 0, 0, 1}
 	colNbr := []int{0, -1, 1, 0}
 
 	visited[y][x] = true
-	subGraph := []*Cell{cg.m[y][x]}
+	subGraph := []*int{cg.m[y][x]}
 
 	for i := 0; i < 4; i++ {
 		if cg.isSafe(x+rowNbr[i], y+colNbr[i], visited) {
@@ -41,13 +41,13 @@ func (cg *CellGraph) dfs(x int, y int, visited [][]bool) []*Cell {
 	return subGraph
 }
 
-func (cg *CellGraph) GetIslands() [][]*Cell {
+func (cg *CellGraph) GetIslands() [][]*int {
 	visited := make([][]bool, cg.y)
 	for i := 0; i < cg.y; i++ {
 		visited[i] = make([]bool, cg.x)
 	}
 
-	islands := [][]*Cell{}
+	islands := [][]*int{}
 
 	for y := 0; y < cg.y; y++ {
 		for x := 0; x < cg.x; x++ {

@@ -80,7 +80,7 @@ func BenchmarkOrganismSplitting_vertical(b *testing.B) {
 
 	for i := 0; i < gridSize; i++ {
 		cells[i].id = i
-		cells[i].position = r2.Point{float64(i), 0}
+		cells[i].position = r2.Point{float64(i - gridSize/2), 0}
 	}
 
 	for i := 0; i < b.N; i++ {
@@ -97,7 +97,7 @@ func BenchmarkOrganismSplitting_horizontal(b *testing.B) {
 
 	for i := 0; i < gridSize; i++ {
 		cells[i].id = i
-		cells[i].position = r2.Point{0, float64(i)}
+		cells[i].position = r2.Point{0, float64(i - gridSize/2)}
 	}
 
 	for i := 0; i < b.N; i++ {

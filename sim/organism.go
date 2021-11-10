@@ -177,16 +177,16 @@ func (o *Organism) split(
 	)
 	defer splitSpan.Finish()
 
-	grid := make([][]*Cell, gridSize)
+	grid := make([][]*int, gridSize)
 	for i := 0; i < gridSize; i++ {
-		grid[i] = make([]*Cell, gridSize)
+		grid[i] = make([]*int, gridSize)
 	}
 
 	for cellIndex := range o.cells {
 		x := int(o.cells[cellIndex].position.X) + gridSize/2
 		y := int(o.cells[cellIndex].position.Y) + gridSize/2
 
-		grid[y][x] = &o.cells[cellIndex]
+		grid[y][x] = &cellIndex
 	}
 
 	graph := CellGraph{}
@@ -197,7 +197,7 @@ func (o *Organism) split(
 	for i := 0; i < len(grids); i++ {
 		grids[i] = make(CellList, len(ptrGrids[i]))
 		for j := 0; j < len(ptrGrids[i]); j++ {
-			grids[i][j] = *ptrGrids[i][j]
+			grids[i][j] = o.cells[*ptrGrids[i][j]]
 		}
 	}
 
